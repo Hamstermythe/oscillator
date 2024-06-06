@@ -18,7 +18,7 @@ func (s *Souris) Action() {
 	if time.Since(s.DateClick) < 250*time.Millisecond {
 		return
 	}
-	if s.Click == "SoudDuration+" {
+	if s.Click == "SoundDuration+" {
 		osc.SoundDuration.Value += 0.1
 	} else if s.Click == "SoundDuration-" {
 		osc.SoundDuration.Value -= 0.1
@@ -38,6 +38,19 @@ func (s *Souris) Action() {
 		osc.Phase.Value += 0.1
 	} else if s.Click == "Phase-" {
 		osc.Phase.Value -= 0.1
+	}
+	if s.Click == "Kick+" {
+		osc.Kick.Value += 0.1
+	} else if s.Click == "Kick-" {
+		osc.Kick.Value -= 0.1
+	} else if s.Click == "AsymetrieX+" {
+		osc.AsymetrieX.Value += 0.1
+	} else if s.Click == "AsymetrieX-" {
+		osc.AsymetrieX.Value -= 0.1
+	} else if s.Click == "AsymetrieY+" {
+		osc.AsymetrieY.Value += 0.1
+	} else if s.Click == "AsymetrieY-" {
+		osc.AsymetrieY.Value -= 0.1
 	}
 }
 
@@ -170,12 +183,40 @@ func mouseDownUpdate(button, x, y int) {
 		fmt.Println("osc.Waveform.Value : ", osc.Waveform.Value)
 	}
 	if x > int(osc.Kick.PositionUp.X) && x < int(osc.Kick.PositionUp.X+osc.Kick.PositionUp.W) && y > int(osc.Kick.PositionUp.Y) && y < int(osc.Kick.PositionUp.Y+osc.Kick.PositionUp.H) {
+		souris.Click = "Kick+"
+		souris.DateClick = time.Now()
 		osc.Kick.Value += 0.1
 		fmt.Println("oscs.Kick.Value up : ", osc.Kick.Value)
 	}
 	if x > int(osc.Kick.PositionDown.X) && x < int(osc.Kick.PositionDown.X+osc.Kick.PositionDown.W) && y > int(osc.Kick.PositionDown.Y) && y < int(osc.Kick.PositionDown.Y+osc.Kick.PositionDown.H) {
+		souris.Click = "Kick-"
+		souris.DateClick = time.Now()
 		osc.Kick.Value -= 0.1
 		fmt.Println("osc.Kick.Value down : ", osc.Kick.Value)
+	}
+	if x > int(osc.AsymetrieX.PositionUp.X) && x < int(osc.AsymetrieX.PositionUp.X+osc.AsymetrieX.PositionUp.W) && y > int(osc.AsymetrieX.PositionUp.Y) && y < int(osc.AsymetrieX.PositionUp.Y+osc.AsymetrieX.PositionUp.H) {
+		souris.Click = "AsymetrieX+"
+		souris.DateClick = time.Now()
+		osc.AsymetrieX.Value += 0.1
+		fmt.Println("osc.Asymetrie.Value up : ", osc.AsymetrieX.Value)
+	}
+	if x > int(osc.AsymetrieX.PositionDown.X) && x < int(osc.AsymetrieX.PositionDown.X+osc.AsymetrieX.PositionDown.W) && y > int(osc.AsymetrieX.PositionDown.Y) && y < int(osc.AsymetrieX.PositionDown.Y+osc.AsymetrieX.PositionDown.H) {
+		souris.Click = "AsymetrieX-"
+		souris.DateClick = time.Now()
+		osc.AsymetrieX.Value -= 0.1
+		fmt.Println("osc.Asymetrie.Value down : ", osc.AsymetrieX.Value)
+	}
+	if x > int(osc.AsymetrieY.PositionUp.X) && x < int(osc.AsymetrieY.PositionUp.X+osc.AsymetrieY.PositionUp.W) && y > int(osc.AsymetrieY.PositionUp.Y) && y < int(osc.AsymetrieY.PositionUp.Y+osc.AsymetrieY.PositionUp.H) {
+		souris.Click = "AsymetrieY+"
+		souris.DateClick = time.Now()
+		osc.AsymetrieY.Value += 0.1
+		fmt.Println("osc.Asymetrie.Value up : ", osc.AsymetrieY.Value)
+	}
+	if x > int(osc.AsymetrieY.PositionDown.X) && x < int(osc.AsymetrieY.PositionDown.X+osc.AsymetrieY.PositionDown.W) && y > int(osc.AsymetrieY.PositionDown.Y) && y < int(osc.AsymetrieY.PositionDown.Y+osc.AsymetrieY.PositionDown.H) {
+		souris.Click = "AsymetrieY-"
+		souris.DateClick = time.Now()
+		osc.AsymetrieY.Value -= 0.1
+		fmt.Println("osc.Asymetrie.Value down : ", osc.AsymetrieY.Value)
 	}
 
 	if x > int(clientInterface.Enregistrer.X) && x < int(clientInterface.Enregistrer.X+clientInterface.Enregistrer.W) && y > int(clientInterface.Enregistrer.Y) && y < int(clientInterface.Enregistrer.Y+clientInterface.Enregistrer.H) {

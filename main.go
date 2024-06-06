@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -45,9 +46,6 @@ func main() {
 	clientInterface.InitInterface(cv)
 
 	wnd.MainLoop(func() {
-		if clientInterface.Style.FontSize != 0 {
-			fmt.Println("clientInterface.Style.FontSize: ", clientInterface.Style.FontSize)
-		}
 		souris.Action()
 		// Effacer l'écran avec une couleur (noir)
 		cv.SetFillStyle(0, 0, 0, 255)
@@ -389,6 +387,74 @@ func main() {
 			float64(osc.Kick.PositionDown.Y)+margeVertical,
 		)
 
+		text = "Asymétrie horizontale " + strconv.FormatFloat(osc.AsymetrieX.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.AsymetrieX.PositionDown.X),
+			float64(osc.AsymetrieX.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.AsymetrieX.PositionUp.X),
+			float64(osc.AsymetrieX.PositionUp.Y),
+			float64(osc.AsymetrieX.PositionUp.W),
+			float64(osc.AsymetrieX.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.AsymetrieX.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.AsymetrieX.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.AsymetrieX.PositionDown.X),
+			float64(osc.AsymetrieX.PositionDown.Y),
+			float64(osc.AsymetrieX.PositionDown.W),
+			float64(osc.AsymetrieX.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.AsymetrieX.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.AsymetrieX.PositionDown.Y)+margeVertical,
+		)
+
+		text = "Asymétrie verticale " + strconv.FormatFloat(osc.AsymetrieY.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.AsymetrieY.PositionDown.X),
+			float64(osc.AsymetrieY.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.AsymetrieY.PositionUp.X),
+			float64(osc.AsymetrieY.PositionUp.Y),
+			float64(osc.AsymetrieY.PositionUp.W),
+			float64(osc.AsymetrieY.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.AsymetrieY.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.AsymetrieY.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.AsymetrieY.PositionDown.X),
+			float64(osc.AsymetrieY.PositionDown.Y),
+			float64(osc.AsymetrieY.PositionDown.W),
+			float64(osc.AsymetrieY.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.AsymetrieY.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.AsymetrieY.PositionDown.Y)+margeVertical,
+		)
+
 		// utils buttons------------------------------------------------------------------------------------------------------------------------------------
 		cv.SetFillStyle(255, 100, 100, 255)
 		cv.FillRect(
@@ -440,17 +506,27 @@ func main() {
 
 		// onde de l'oscillateur -------------------------------------------------------------------------------------------------------
 		cv.SetFillStyle(255, 255, 255, 255)
-		for x := 0; x < wndWidth; x++ {
-			t := float64(x) / float64(wndWidth)
-			y := osc.Value(t)
+		wave, samples := osc.GenerateWave()
+		pointMultiplier := 4
+		pointNumber := wndWidth * pointMultiplier
+		chunk := samples / pointNumber
+		for x := 0; x < pointNumber; x++ {
+			t := float64(x * chunk)
+			y := wave[int(t)]
 			if osc.OnlyPositive.Value {
 				if y < 0 {
 					y = 0
 				}
 			}
+			phase := osc.Frequency.Value*t + osc.Phase.Value
+			if math.Sin(phase) < 0.1 && math.Sin(phase) > -0.1 { // && math.Sin(phase) < 0. {
+				cv.SetFillStyle(255, 0, 0, 255)
+			} else {
+				cv.SetFillStyle(0, 255, 0, 255)
+			}
 			cv.FillRect(
-				float64(x),
-				float64(300-int(y*300)),
+				float64(x/pointMultiplier),
+				float64(wndHeight)/2-float64(y)*float64(wndHeight)/2,
 				1,
 				1,
 			)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/youpy/go-wav"
@@ -61,8 +62,15 @@ type Kick struct {
 	PositionDown sdl.Rect
 }
 
+type Asymetrie struct {
+	Value        float64
+	PositionUp   sdl.Rect
+	PositionDown sdl.Rect
+}
+
 type Oscillator struct {
 	// unsettable fields
+	Increase      bool
 	BitsPerSample uint16
 	// configurable fields column 1
 	OnlyPositive  OnlyPositive
@@ -72,8 +80,10 @@ type Oscillator struct {
 	Frequency     Frequency
 	Phase         Phase
 	// configurable fields column 2
-	Waveform Waveform
-	Kick     Kick
+	Waveform   Waveform
+	Kick       Kick
+	AsymetrieX Asymetrie
+	AsymetrieY Asymetrie
 }
 
 // Fonction skewedSine
@@ -85,23 +95,76 @@ func (o *Oscillator) kick(phase float64) float64 {
 	return -math.Pow(-sine, o.Kick.Value)
 }
 
+// Fonction pour une montée exponentielle et une descente logarithmique
+func (o *Oscillator) asymmetricTransformX(value float64) float64 {
+	if value > 0 {
+		return math.Pow(value, 1/o.AsymetrieX.Value)
+	}
+	return -math.Log(-value+1) * o.AsymetrieX.Value
+}
+
+// Fonction pour une montée exponentielle et une descente logarithmique
+func (o *Oscillator) expAndExp(asymVal, phase float64) float64 {
+	if o.Increase {
+		return asymVal * math.Pow(math.Abs(math.Sin(phase)), o.AsymetrieY.Value)
+	} else {
+		return asymVal * (1 - math.Log(math.Abs(math.Sin(phase))+1)/(math.Log(2)*o.AsymetrieY.Value))
+	}
+}
+
 func (o *Oscillator) Value(t float64) float64 {
 	phase := o.Frequency.Value*t + o.Phase.Value
+	if math.Sin(phase) < 0.02 && math.Sin(phase) > -0.02 {
+		o.Increase = true
+	}
+	if math.Sin(phase) > 0.98 || math.Sin(phase) < -0.98 {
+		o.Increase = false
+	}
+	val := 0.0
 	switch o.Waveform.Value {
 	case "sine":
-		return o.Amplitude.Value * o.kick(phase)
+		if o.Kick.Value != 0 {
+			val = o.Amplitude.Value * o.kick(phase)
+		} else {
+			val = o.Amplitude.Value * math.Sin(phase)
+		}
 	case "triangle":
 		triangle := (2 / math.Pi) * math.Asin(math.Sin(phase))
-		return o.Amplitude.Value * o.kick(triangle)
+		if o.Kick.Value != 0 {
+			val = o.Amplitude.Value * o.kick(triangle)
+		} else {
+			val = o.Amplitude.Value * triangle //math.Sin(phase)
+		}
 	case "square":
 		if math.Sin(phase) >= 0 {
-			return o.Amplitude.Value
+			if o.Kick.Value != 0 {
+				val = o.Amplitude.Value * o.kick(phase)
+			} else {
+				val = o.Amplitude.Value
+			}
+		} else {
+			if o.Kick.Value != 0 {
+				val = o.Amplitude.Value * o.kick(phase)
+			} else {
+				val = -o.Amplitude.Value
+			}
 		}
-		return -o.Amplitude.Value
 	case "Flat":
-		return o.Amplitude.Value
+		if o.Kick.Value != 0 {
+			val = o.Amplitude.Value * o.kick(phase)
+		} else {
+			val = o.Amplitude.Value
+		}
 	}
-	return 0
+	asymVal := val
+	if o.AsymetrieX.Value > 0 || o.AsymetrieX.Value < 0 {
+		asymVal = o.asymmetricTransformX(val)
+	}
+	if o.AsymetrieY.Value > 0 || o.AsymetrieY.Value < 0 {
+		asymVal = o.expAndExp(asymVal, phase)
+	}
+
+	return o.Amplitude.Value * asymVal
 }
 
 func (o *Oscillator) Update(dt float64) {
@@ -130,10 +193,13 @@ func (o *Oscillator) SetParams(a, f, p float64) {
 	o.Phase.Value = p
 }
 
-func (o *Oscillator) GenerateWave(samples int, sampleRate int) []float32 {
+func (o *Oscillator) GenerateWave() ([]float32, int) {
+	ratioTimeBits := float64(o.BitsPerSample / 8)
+	fmt.Println("ratioTimeBits: ", ratioTimeBits, ", o.BitsPerSample: ", o.BitsPerSample)
+	samples := int(float64(o.SampleRate.Value) * o.SoundDuration.Value * ratioTimeBits)
 	data := make([]float32, samples)
 	for i := 0; i < samples; i++ {
-		t := float64(i) / float64(sampleRate)
+		t := float64(i) / float64(o.SampleRate.Value)
 		val := o.Value(t)
 		if o.OnlyPositive.Value {
 			if val < 0 {
@@ -142,17 +208,17 @@ func (o *Oscillator) GenerateWave(samples int, sampleRate int) []float32 {
 		}
 		data[i] = float32(val)
 	}
-	return data
+	return data, samples
 }
 
 func (o *Oscillator) SaveToWav(filename string) error {
-	ratioTimeBits := float64(o.BitsPerSample / 8)
-	fmt.Println("ratioTimeBits: ", ratioTimeBits, ", o.BitsPerSample: ", o.BitsPerSample)
-	samples := int(float64(o.SampleRate.Value) * o.SoundDuration.Value * ratioTimeBits)
+	//ratioTimeBits := float64(o.BitsPerSample / 8)
+	//fmt.Println("ratioTimeBits: ", ratioTimeBits, ", o.BitsPerSample: ", o.BitsPerSample)
+	//samples := int(float64(o.SampleRate.Value) * o.SoundDuration.Value * ratioTimeBits)
 	//samples := int((44100.0 / float64(o.SampleRate.Value)) * (44100.0 * 5.0))
 	//samples := int(float64(o.SampleRate.Value) * (baseNumber / float64(o.SampleRate.Value)))
 	//samples := o.SampleRate.Value * int(20.0/osc.Duration)
-	data := o.GenerateWave(samples, o.SampleRate.Value)
+	data, samples := o.GenerateWave() //samples, o.SampleRate.Value)
 
 	// Create WAV file
 	file, err := os.Create(filename)
@@ -168,6 +234,16 @@ func (o *Oscillator) SaveToWav(filename string) error {
 		//writer.Write(int(sample * 32767))
 	}
 	writer.Write(arrBytes)
+
+	go func(filename string) {
+		bashCommand := fmt.Sprintf("mplayer %s ", filename)
+		cmd := exec.Command("bash", "-c", bashCommand)
+		err = cmd.Run()
+		if err != nil {
+			fmt.Println("Erreur lors de la lecture du fichier WAV : %w", err)
+		}
+	}(filename)
+
 	return nil
 }
 

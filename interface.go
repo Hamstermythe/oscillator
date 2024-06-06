@@ -80,6 +80,16 @@ func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 			PositionUp:   sdl.Rect{X: 400, Y: int32(wndHeight - 400), W: 70, H: 50},
 			PositionDown: sdl.Rect{X: 300, Y: int32(wndHeight - 400), W: 70, H: 50},
 		},
+		AsymetrieX: Asymetrie{
+			Value:        0,
+			PositionUp:   sdl.Rect{X: 400, Y: int32(wndHeight - 300), W: 70, H: 50},
+			PositionDown: sdl.Rect{X: 300, Y: int32(wndHeight - 300), W: 70, H: 50},
+		},
+		AsymetrieY: Asymetrie{
+			Value:        0,
+			PositionUp:   sdl.Rect{X: 400, Y: int32(wndHeight - 200), W: 70, H: 50},
+			PositionDown: sdl.Rect{X: 300, Y: int32(wndHeight - 200), W: 70, H: 50},
+		},
 	}
 	ci.Oscillator = osc
 	ci.Enregistrer = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 250), W: 100, H: 50}
