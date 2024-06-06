@@ -9,9 +9,27 @@ import (
 	"github.com/youpy/go-wav"
 )
 
+type OnlyPositive struct {
+	Value        bool
+	PositionUp   sdl.Rect
+	PositionDown sdl.Rect
+}
+
+type SoundDuration struct {
+	Value        float64
+	PositionUp   sdl.Rect
+	PositionDown sdl.Rect
+}
+
 // Structures pour l'oscillateur
 type Amplitude struct {
 	Value        float64
+	PositionUp   sdl.Rect
+	PositionDown sdl.Rect
+}
+
+type SampleRate struct {
+	Value        int
 	PositionUp   sdl.Rect
 	PositionDown sdl.Rect
 }
@@ -28,21 +46,46 @@ type Phase struct {
 	PositionDown sdl.Rect
 }
 
-type Oscillator struct {
-	Amplitude Amplitude
-	Frequency Frequency
-	Phase     Phase
+type Waveform struct {
+	// sine || triangle || square || Flat
+	Value            string
+	PositionSine     sdl.Rect
+	PositionTriangle sdl.Rect
+	PositionSquare   sdl.Rect
+	PositionFlat     sdl.Rect
 }
 
-type ClientInterface struct {
-	Oscillator  *Oscillator
-	Enregistrer sdl.Rect
-	Lire        sdl.Rect
-	Stopper     sdl.Rect
+type Oscillator struct {
+	// unsettable fields
+	BitsPerSample uint16
+	// configurable fields column 1
+	OnlyPositive  OnlyPositive
+	SoundDuration SoundDuration
+	Amplitude     Amplitude
+	SampleRate    SampleRate
+	Frequency     Frequency
+	Phase         Phase
+	// configurable fields column 2
+	Waveform Waveform
 }
 
 func (o *Oscillator) Value(t float64) float64 {
-	return o.Amplitude.Value * math.Sin(o.Frequency.Value*t+o.Phase.Value)
+	//return o.Amplitude.Value * math.Sin(o.Frequency.Value*t+o.Phase.Value)
+	phase := o.Frequency.Value*t + o.Phase.Value
+	switch o.Waveform.Value {
+	case "sine":
+		return o.Amplitude.Value * math.Sin(phase)
+	case "triangle":
+		return o.Amplitude.Value * (2 / math.Pi) * math.Asin(math.Sin(phase))
+	case "square":
+		if math.Sin(phase) >= 0 {
+			return o.Amplitude.Value
+		}
+		return -o.Amplitude.Value
+	case "flat":
+		return o.Amplitude.Value
+	}
+	return 0
 }
 
 func (o *Oscillator) Update(dt float64) {
@@ -75,16 +118,25 @@ func (o *Oscillator) GenerateWave(samples int, sampleRate int) []float32 {
 	data := make([]float32, samples)
 	for i := 0; i < samples; i++ {
 		t := float64(i) / float64(sampleRate)
-		data[i] = float32(o.Value(t))
+		val := o.Value(t)
+		if o.OnlyPositive.Value {
+			if val < 0 {
+				val = 0
+			}
+		}
+		data[i] = float32(val)
 	}
 	return data
 }
 
 func (o *Oscillator) SaveToWav(filename string) error {
-	// Generate 5 seconds of audio
-	sampleRate := 44100
-	samples := sampleRate * 5
-	data := o.GenerateWave(samples, sampleRate)
+	ratioTimeBits := float64(o.BitsPerSample / 8)
+	fmt.Println("ratioTimeBits: ", ratioTimeBits, ", o.BitsPerSample: ", o.BitsPerSample)
+	samples := int(float64(o.SampleRate.Value) * o.SoundDuration.Value * ratioTimeBits)
+	//samples := int((44100.0 / float64(o.SampleRate.Value)) * (44100.0 * 5.0))
+	//samples := int(float64(o.SampleRate.Value) * (baseNumber / float64(o.SampleRate.Value)))
+	//samples := o.SampleRate.Value * int(20.0/osc.Duration)
+	data := o.GenerateWave(samples, o.SampleRate.Value)
 
 	// Create WAV file
 	file, err := os.Create(filename)
@@ -93,7 +145,7 @@ func (o *Oscillator) SaveToWav(filename string) error {
 	}
 	defer file.Close()
 
-	writer := wav.NewWriter(file, uint32(samples), 1, uint32(sampleRate), 2)
+	writer := wav.NewWriter(file, uint32(samples), 1, uint32(o.SampleRate.Value), o.BitsPerSample)
 	var arrBytes []byte
 	for _, sample := range data {
 		arrBytes = append(arrBytes, byte(sample*32767))

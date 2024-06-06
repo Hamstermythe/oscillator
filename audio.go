@@ -22,13 +22,13 @@ func audio(fileName string) {
 	id, data, err := readChunk(f)
 	chk(err)
 	if id.String() != "FORM" {
-		fmt.Println("bad file format")
+		fmt.Println("bad file format, read ", id.String(), " instead of FORM")
 		return
 	}
 	_, err = data.Read(id[:])
 	chk(err)
 	if id.String() != "AIFF" {
-		fmt.Println("bad file format")
+		fmt.Println("bad file format, read ", id.String(), " instead of AIFF")
 		return
 	}
 	var c commonChunk

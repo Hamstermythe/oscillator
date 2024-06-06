@@ -2,119 +2,15 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/tfriedel6/canvas/sdlcanvas"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-func addEvent(wnd *sdlcanvas.Window) *sdlcanvas.Window {
-	wnd.Event = func(event sdl.Event) {
-		switch event := event.(type) {
-		case *sdl.QuitEvent:
-			running = false
-			return
-		case *sdl.DisplayEvent:
-		case *sdl.MouseMotionEvent:
-			mouseMoveUpdate(float64(event.X), float64(event.Y))
-		case *sdl.MouseWheelEvent:
-			// mouseWheelEvent(int(event.X), int(event.Y))
-		case *sdl.MouseButtonEvent:
-			if event.State == sdl.PRESSED {
-				mouseDownUpdate(int(event.Button), int(event.X), int(event.Y))
-			}
-			/*
-				else if event.State == sdl.RELEASED {
-					mouseUpUpdate(int(event.Button))
-				}
-			*/
-		}
-	}
-	return wnd
-}
-
-func mouseMoveUpdate(x, y float64) {
-	souris.X = int(x)
-	souris.Y = int(y)
-}
-
-func mouseDownUpdate(button, x, y int) {
-	if x > int(osc.Amplitude.PositionUp.X) && x < int(osc.Amplitude.PositionUp.X+osc.Amplitude.PositionUp.W) && y > int(osc.Amplitude.PositionUp.Y) && y < int(osc.Amplitude.PositionUp.Y+osc.Amplitude.PositionUp.H) {
-		osc.Amplitude.Value += 0.1
-		fmt.Println("osc.Amplitude.Value up : ", osc.Amplitude.Value)
-	}
-	if x > int(osc.Amplitude.PositionDown.X) && x < int(osc.Amplitude.PositionDown.X+osc.Amplitude.PositionDown.W) && y > int(osc.Amplitude.PositionDown.Y) && y < int(osc.Amplitude.PositionDown.Y+osc.Amplitude.PositionDown.H) {
-		osc.Amplitude.Value -= 0.1
-		fmt.Println("osc.Amplitude.Value down : ", osc.Amplitude.Value)
-	}
-	if x > int(osc.Frequency.PositionUp.X) && x < int(osc.Frequency.PositionUp.X+osc.Frequency.PositionUp.W) && y > int(osc.Frequency.PositionUp.Y) && y < int(osc.Frequency.PositionUp.Y+osc.Frequency.PositionUp.H) {
-		osc.Frequency.Value += 0.1
-		fmt.Println("osc.Frequency.Value up : ", osc.Frequency.Value)
-	}
-	if x > int(osc.Frequency.PositionDown.X) && x < int(osc.Frequency.PositionDown.X+osc.Frequency.PositionDown.W) && y > int(osc.Frequency.PositionDown.Y) && y < int(osc.Frequency.PositionDown.Y+osc.Frequency.PositionDown.H) {
-		osc.Frequency.Value -= 0.1
-		fmt.Println("osc.Frequency.Value down : ", osc.Frequency.Value)
-	}
-	if x > int(osc.Phase.PositionUp.X) && x < int(osc.Phase.PositionUp.X+osc.Phase.PositionUp.W) && y > int(osc.Phase.PositionUp.Y) && y < int(osc.Phase.PositionUp.Y+osc.Phase.PositionUp.H) {
-		osc.Phase.Value += 0.1
-		fmt.Println("osc.Phase.Value up : ", osc.Phase.Value)
-	}
-	if x > int(osc.Phase.PositionDown.X) && x < int(osc.Phase.PositionDown.X+osc.Phase.PositionDown.W) && y > int(osc.Phase.PositionDown.Y) && y < int(osc.Phase.PositionDown.Y+osc.Phase.PositionDown.H) {
-		osc.Phase.Value -= 0.1
-		fmt.Println("osc.Phase.Value down : ", osc.Phase.Value)
-	}
-
-	if x > int(clientInterface.Enregistrer.X) && x < int(clientInterface.Enregistrer.X+clientInterface.Enregistrer.W) && y > int(clientInterface.Enregistrer.Y) && y < int(clientInterface.Enregistrer.Y+clientInterface.Enregistrer.H) {
-		fileName := "output.wav"
-		osc.SaveToWav(fileName)
-		//osc.play(fileName)
-	}
-	if x > int(clientInterface.Lire.X) && x < int(clientInterface.Lire.X+clientInterface.Lire.W) && y > int(clientInterface.Lire.Y) && y < int(clientInterface.Lire.Y+clientInterface.Lire.H) {
-		fileName := "output.wav"
-		osc.play(fileName)
-	}
-	if x > int(clientInterface.Stopper.X) && x < int(clientInterface.Stopper.X+clientInterface.Stopper.W) && y > int(clientInterface.Stopper.Y) && y < int(clientInterface.Stopper.Y+clientInterface.Stopper.H) {
-		//osc.stop(fileName)
-	}
-}
-func InitInterface() {
-	osc = &Oscillator{
-		Amplitude: Amplitude{
-			Value:        1,
-			PositionUp:   sdl.Rect{X: 50, Y: int32(wndHeight - 400), W: 70, H: 50},
-			PositionDown: sdl.Rect{X: 150, Y: int32(wndHeight - 400), W: 70, H: 50},
-		},
-		Frequency: Frequency{
-			Value:        1,
-			PositionUp:   sdl.Rect{X: 50, Y: int32(wndHeight - 300), W: 70, H: 50},
-			PositionDown: sdl.Rect{X: 150, Y: int32(wndHeight - 300), W: 70, H: 50},
-		},
-		Phase: Phase{
-			Value:        0,
-			PositionUp:   sdl.Rect{X: 50, Y: int32(wndHeight - 200), W: 70, H: 50},
-			PositionDown: sdl.Rect{X: 150, Y: int32(wndHeight - 200), W: 70, H: 50},
-		},
-	}
-	clientInterface = ClientInterface{
-		Oscillator:  osc,
-		Enregistrer: sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 250), W: 100, H: 50},
-		Lire:        sdl.Rect{X: int32(wndWidth - 250), Y: int32(wndHeight - 100), W: 100, H: 50},
-		Stopper:     sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 100), W: 100, H: 50},
-	}
-
-}
-
-func setWindow(screenX, screenY int) {
-	echelle = float64(screenX) / 1920
-	wndWidth = screenX
-	wndHeight = screenY
-}
-
-type Souris struct {
-	X, Y int
-}
-
 var osc = &Oscillator{}
-var clientInterface = ClientInterface{}
+var clientInterface = &ClientInterface{}
 var echelle float64
 var wndWidth, wndHeight int
 var souris = Souris{}
@@ -141,55 +37,398 @@ func main() {
 		panic(err)
 	}
 	wnd.Window.SetBordered(false)
-	//wnd.Window.SetPosition(0, 0)
-	//wnd.Window.SetFullscreen(sdl.WINDOW_FULLSCREEN_DESKTOP)
 	wnd.Window.SetResizable(false)
-	//wnd.Window.SetPosition(sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED)
-	//wnd.Window.SetSize(int32(wndWidth), int32(wndHeight))
 	width, height := wnd.Window.GetSize()
 	fmt.Println("width: ", width, "height: ", height)
 	wnd = addEvent(wnd)
 
-	InitInterface()
+	clientInterface.InitInterface(cv)
 
-	//for running {
 	wnd.MainLoop(func() {
+		if clientInterface.Style.FontSize != 0 {
+			fmt.Println("clientInterface.Style.FontSize: ", clientInterface.Style.FontSize)
+		}
+		souris.Action()
 		// Effacer l'écran avec une couleur (noir)
 		cv.SetFillStyle(0, 0, 0, 255)
 		cv.FillRect(0, 0, float64(wndWidth), float64(wndHeight))
 
-		// Dessiner les boutons de l'oscillateur
-		cv.SetFillStyle(255, 0, 0, 255)
-		cv.FillRect(float64(osc.Amplitude.PositionUp.X), float64(osc.Amplitude.PositionUp.Y), float64(osc.Amplitude.PositionUp.W), float64(osc.Amplitude.PositionUp.H))
-		cv.SetFillStyle(0, 255, 0, 255)
-		cv.FillRect(float64(osc.Amplitude.PositionDown.X), float64(osc.Amplitude.PositionDown.Y), float64(osc.Amplitude.PositionDown.W), float64(osc.Amplitude.PositionDown.H))
-		cv.SetFillStyle(255, 0, 0, 255)
-		cv.FillRect(float64(osc.Frequency.PositionUp.X), float64(osc.Frequency.PositionUp.Y), float64(osc.Frequency.PositionUp.W), float64(osc.Frequency.PositionUp.H))
-		cv.SetFillStyle(0, 255, 0, 255)
-		cv.FillRect(float64(osc.Frequency.PositionDown.X), float64(osc.Frequency.PositionDown.Y), float64(osc.Frequency.PositionDown.W), float64(osc.Frequency.PositionDown.H))
-		cv.SetFillStyle(255, 0, 0, 255)
-		cv.FillRect(float64(osc.Phase.PositionUp.X), float64(osc.Phase.PositionUp.Y), float64(osc.Phase.PositionUp.W), float64(osc.Phase.PositionUp.H))
-		cv.SetFillStyle(0, 255, 0, 255)
-		cv.FillRect(float64(osc.Phase.PositionDown.X), float64(osc.Phase.PositionDown.Y), float64(osc.Phase.PositionDown.W), float64(osc.Phase.PositionDown.H))
-
-		cv.SetFillStyle(255, 100, 100, 255)
-		cv.FillRect(float64(clientInterface.Enregistrer.X), float64(clientInterface.Enregistrer.Y), float64(clientInterface.Enregistrer.W), float64(clientInterface.Enregistrer.H))
-		cv.SetFillStyle(0, 0, 255, 255)
-		cv.FillRect(float64(clientInterface.Lire.X), float64(clientInterface.Lire.Y), float64(clientInterface.Lire.W), float64(clientInterface.Lire.H))
-		cv.SetFillStyle(255, 0, 0, 255)
-		cv.FillRect(float64(clientInterface.Stopper.X), float64(clientInterface.Stopper.Y), float64(clientInterface.Stopper.W), float64(clientInterface.Stopper.H))
-
-		// Dessiner l'onde de l'oscillateur
+		// configurables fields column 1-----------------------------------------------------------------------------------------------------------------------
+		margeVertical := ((float64(osc.Amplitude.PositionDown.H) - clientInterface.Style.FontSize) / 2) + clientInterface.Style.FontSize
+		margeHorizontalePlus := (float64(osc.Amplitude.PositionUp.W) - cv.MeasureText("+").Width) / 2
+		margeHorizontaleMoins := (float64(osc.Amplitude.PositionDown.W) - cv.MeasureText("-").Width) / 2
+		text := "Only Positive"
+		marginHorizontal := cv.MeasureText(text).Width + 10
 		cv.SetFillStyle(255, 255, 255, 255)
-		for x := 0; x < 800; x++ {
-			t := float64(x) / 800
+		cv.FillText(
+			text,
+			float64(osc.OnlyPositive.PositionUp.X)-marginHorizontal,
+			float64(osc.OnlyPositive.PositionUp.Y)+float64(osc.OnlyPositive.PositionUp.H)+(clientInterface.Style.FontSize/2),
+		) //-clientInterface.Style.FontSize)
+		if osc.OnlyPositive.Value {
+			cv.SetFillStyle(0, 255, 0, 255)
+		} else {
+			cv.SetFillStyle(0, 50, 0, 255)
+		}
+		cv.FillRect(
+			float64(osc.OnlyPositive.PositionUp.X),
+			float64(osc.OnlyPositive.PositionUp.Y),
+			float64(osc.OnlyPositive.PositionUp.W),
+			float64(osc.OnlyPositive.PositionUp.H),
+		)
+		if osc.OnlyPositive.Value {
+			cv.SetFillStyle(255, 255, 255, 255)
+		} else {
+			cv.SetFillStyle(100, 130, 100, 255)
+		}
+		cv.FillText(
+			"on",
+			float64(osc.OnlyPositive.PositionUp.X)+((float64(osc.OnlyPositive.PositionUp.W)-cv.MeasureText("on").Width)/2),
+			float64(osc.OnlyPositive.PositionUp.Y)+clientInterface.Style.FontSize,
+		)
+		if !osc.OnlyPositive.Value {
+			cv.SetFillStyle(255, 0, 0, 255)
+		} else {
+			cv.SetFillStyle(50, 0, 0, 255)
+		}
+		cv.FillRect(
+			float64(osc.OnlyPositive.PositionDown.X),
+			float64(osc.OnlyPositive.PositionDown.Y),
+			float64(osc.OnlyPositive.PositionDown.W),
+			float64(osc.OnlyPositive.PositionDown.H),
+		)
+		if !osc.OnlyPositive.Value {
+			cv.SetFillStyle(255, 255, 255, 255)
+		} else {
+			cv.SetFillStyle(130, 100, 100, 100)
+		}
+		cv.FillText(
+			"off",
+			float64(osc.OnlyPositive.PositionDown.X)+((float64(osc.OnlyPositive.PositionUp.W)-cv.MeasureText("off").Width)/2),
+			float64(osc.OnlyPositive.PositionDown.Y)+clientInterface.Style.FontSize,
+		)
+
+		text = "Sound Duration   " + strconv.FormatFloat(osc.SoundDuration.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.SoundDuration.PositionDown.X),
+			float64(osc.SoundDuration.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.SoundDuration.PositionUp.X),
+			float64(osc.SoundDuration.PositionUp.Y),
+			float64(osc.SoundDuration.PositionUp.W),
+			float64(osc.SoundDuration.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.SoundDuration.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.SoundDuration.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.SoundDuration.PositionDown.X),
+			float64(osc.SoundDuration.PositionDown.Y),
+			float64(osc.SoundDuration.PositionDown.W),
+			float64(osc.SoundDuration.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.SoundDuration.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.SoundDuration.PositionDown.Y)+margeVertical,
+		)
+
+		text = "Amplitude     " + strconv.FormatFloat(osc.Amplitude.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.Amplitude.PositionDown.X),
+			float64(osc.Amplitude.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.Amplitude.PositionUp.X),
+			float64(osc.Amplitude.PositionUp.Y),
+			float64(osc.Amplitude.PositionUp.W),
+			float64(osc.Amplitude.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.Amplitude.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.Amplitude.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.Amplitude.PositionDown.X),
+			float64(osc.Amplitude.PositionDown.Y),
+			float64(osc.Amplitude.PositionDown.W),
+			float64(osc.Amplitude.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.Amplitude.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.Amplitude.PositionDown.Y)+margeVertical,
+		)
+
+		text = "Sample Rate   " + strconv.Itoa(osc.SampleRate.Value)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.SampleRate.PositionDown.X),
+			float64(osc.SampleRate.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.SampleRate.PositionUp.X),
+			float64(osc.SampleRate.PositionUp.Y),
+			float64(osc.SampleRate.PositionUp.W),
+			float64(osc.SampleRate.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.SampleRate.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.SampleRate.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.SampleRate.PositionDown.X),
+			float64(osc.SampleRate.PositionDown.Y),
+			float64(osc.SampleRate.PositionDown.W),
+			float64(osc.SampleRate.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.SampleRate.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.SampleRate.PositionDown.Y)+margeVertical,
+		)
+
+		text = "Frequency     " + strconv.FormatFloat(osc.Frequency.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.Frequency.PositionDown.X),
+			float64(osc.Frequency.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.Frequency.PositionUp.X),
+			float64(osc.Frequency.PositionUp.Y),
+			float64(osc.Frequency.PositionUp.W),
+			float64(osc.Frequency.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.Frequency.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.Frequency.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.Frequency.PositionDown.X),
+			float64(osc.Frequency.PositionDown.Y),
+			float64(osc.Frequency.PositionDown.W),
+			float64(osc.Frequency.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.Frequency.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.Frequency.PositionDown.Y)+margeVertical,
+		)
+
+		text = "Phase         " + strconv.FormatFloat(osc.Phase.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.Phase.PositionDown.X),
+			float64(osc.Phase.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.Phase.PositionUp.X),
+			float64(osc.Phase.PositionUp.Y),
+			float64(osc.Phase.PositionUp.W),
+			float64(osc.Phase.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.Phase.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.Phase.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.Phase.PositionDown.X),
+			float64(osc.Phase.PositionDown.Y),
+			float64(osc.Phase.PositionDown.W),
+			float64(osc.Phase.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.Phase.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.Phase.PositionDown.Y)+margeVertical,
+		)
+
+		// configurables fields column 2------------------------------------------------------------------------------------------------------------------------
+		text = "Waveform"
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.Waveform.PositionSine.X)+((float64(osc.Waveform.PositionSine.W*2)-cv.MeasureText(text).Width)/2),
+			float64(osc.Waveform.PositionSine.Y)-clientInterface.Style.FontSize,
+		)
+		if osc.Waveform.Value == "sine" {
+			cv.SetFillStyle(0, 255, 0, 255)
+		} else {
+			cv.SetFillStyle(255, 0, 0, 255)
+		}
+		cv.FillRect(
+			float64(osc.Waveform.PositionSine.X),
+			float64(osc.Waveform.PositionSine.Y),
+			float64(osc.Waveform.PositionSine.W),
+			float64(osc.Waveform.PositionSine.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"sine",
+			float64(osc.Waveform.PositionSine.X)+((float64(osc.Waveform.PositionSine.W)-cv.MeasureText("sine").Width)/2),
+			float64(osc.Waveform.PositionSine.Y)+clientInterface.Style.FontSize,
+		)
+		if osc.Waveform.Value == "triangle" {
+			cv.SetFillStyle(0, 255, 0, 255)
+		} else {
+			cv.SetFillStyle(255, 0, 0, 255)
+		}
+		cv.FillRect(
+			float64(osc.Waveform.PositionTriangle.X),
+			float64(osc.Waveform.PositionTriangle.Y),
+			float64(osc.Waveform.PositionTriangle.W),
+			float64(osc.Waveform.PositionTriangle.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"triangle",
+			float64(osc.Waveform.PositionTriangle.X)+((float64(osc.Waveform.PositionTriangle.W)-cv.MeasureText("triangle").Width)/2),
+			float64(osc.Waveform.PositionTriangle.Y)+clientInterface.Style.FontSize,
+		)
+		if osc.Waveform.Value == "square" {
+			cv.SetFillStyle(0, 255, 0, 255)
+		} else {
+			cv.SetFillStyle(255, 0, 0, 255)
+		}
+		cv.FillRect(
+			float64(osc.Waveform.PositionSquare.X),
+			float64(osc.Waveform.PositionSquare.Y),
+			float64(osc.Waveform.PositionSquare.W),
+			float64(osc.Waveform.PositionSquare.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"square",
+			float64(osc.Waveform.PositionSquare.X)+((float64(osc.Waveform.PositionSquare.W)-cv.MeasureText("square").Width)/2),
+			float64(osc.Waveform.PositionSquare.Y)+clientInterface.Style.FontSize,
+		)
+		if osc.Waveform.Value == "flat" {
+			cv.SetFillStyle(0, 255, 0, 255)
+		} else {
+			cv.SetFillStyle(255, 0, 0, 255)
+		}
+		cv.FillRect(
+			float64(osc.Waveform.PositionFlat.X),
+			float64(osc.Waveform.PositionFlat.Y),
+			float64(osc.Waveform.PositionFlat.W),
+			float64(osc.Waveform.PositionFlat.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"flat",
+			float64(osc.Waveform.PositionFlat.X)+((float64(osc.Waveform.PositionFlat.W)-cv.MeasureText("flat").Width)/2),
+			float64(osc.Waveform.PositionFlat.Y)+clientInterface.Style.FontSize,
+		)
+
+		// utils buttons------------------------------------------------------------------------------------------------------------------------------------
+		cv.SetFillStyle(255, 100, 100, 255)
+		cv.FillRect(
+			float64(clientInterface.Enregistrer.X),
+			float64(clientInterface.Enregistrer.Y),
+			float64(clientInterface.Enregistrer.W),
+			float64(clientInterface.Enregistrer.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		margeVertical = (float64(clientInterface.Enregistrer.H) - clientInterface.Style.FontSize) / 2
+		margeHorizontale := (float64(clientInterface.Enregistrer.W) - cv.MeasureText("Save").Width) / 2
+		cv.FillText(
+			"Save",
+			float64(clientInterface.Enregistrer.X)+margeVertical,
+			float64(clientInterface.Enregistrer.Y)+margeHorizontale,
+		)
+
+		cv.SetFillStyle(0, 0, 255, 255)
+		cv.FillRect(
+			float64(clientInterface.Lire.X),
+			float64(clientInterface.Lire.Y),
+			float64(clientInterface.Lire.W),
+			float64(clientInterface.Lire.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		margeVertical = (float64(clientInterface.Lire.H) - clientInterface.Style.FontSize) / 2
+		margeHorizontale = (float64(clientInterface.Lire.W) - cv.MeasureText("Play").Width) / 2
+		cv.FillText(
+			"Play",
+			float64(clientInterface.Lire.X)+margeVertical,
+			float64(clientInterface.Lire.Y)+margeHorizontale,
+		)
+
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(clientInterface.Stopper.X),
+			float64(clientInterface.Stopper.Y),
+			float64(clientInterface.Stopper.W),
+			float64(clientInterface.Stopper.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		margeVertical = (float64(clientInterface.Stopper.H) - clientInterface.Style.FontSize) / 2
+		margeHorizontale = (float64(clientInterface.Stopper.W) - cv.MeasureText("Stop").Width) / 2
+		cv.FillText(
+			"Stop",
+			float64(clientInterface.Stopper.X)+margeVertical,
+			float64(clientInterface.Stopper.Y)+margeHorizontale,
+		)
+
+		// onde de l'oscillateur -------------------------------------------------------------------------------------------------------
+		cv.SetFillStyle(255, 255, 255, 255)
+		for x := 0; x < wndWidth; x++ {
+			t := float64(x) / float64(wndWidth)
 			y := osc.Value(t)
-			cv.FillRect(float64(x), float64(300-int(y*300)), 1, 1)
+			if osc.OnlyPositive.Value {
+				if y < 0 {
+					y = 0
+				}
+			}
+			cv.FillRect(
+				float64(x),
+				float64(300-int(y*300)),
+				1,
+				1,
+			)
 		}
 
 		// Présenter le rendu à l'écran
 		//cv.Present()
-
+		if !running {
+			wnd.Destroy()
+			os.Exit(1)
+			return
+		}
 		// Introduire un léger délai pour limiter la boucle à environ 60 itérations par seconde
 		sdl.Delay(16)
 	})
