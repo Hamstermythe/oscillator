@@ -55,6 +55,12 @@ type Waveform struct {
 	PositionFlat     sdl.Rect
 }
 
+type Kick struct {
+	Value        float64
+	PositionUp   sdl.Rect
+	PositionDown sdl.Rect
+}
+
 type Oscillator struct {
 	// unsettable fields
 	BitsPerSample uint16
@@ -67,22 +73,32 @@ type Oscillator struct {
 	Phase         Phase
 	// configurable fields column 2
 	Waveform Waveform
+	Kick     Kick
+}
+
+// Fonction skewedSine
+func (o *Oscillator) kick(phase float64) float64 {
+	sine := math.Sin(phase)
+	if sine > 0 {
+		return math.Pow(sine, 1/o.Kick.Value)
+	}
+	return -math.Pow(-sine, o.Kick.Value)
 }
 
 func (o *Oscillator) Value(t float64) float64 {
-	//return o.Amplitude.Value * math.Sin(o.Frequency.Value*t+o.Phase.Value)
 	phase := o.Frequency.Value*t + o.Phase.Value
 	switch o.Waveform.Value {
 	case "sine":
-		return o.Amplitude.Value * math.Sin(phase)
+		return o.Amplitude.Value * o.kick(phase)
 	case "triangle":
-		return o.Amplitude.Value * (2 / math.Pi) * math.Asin(math.Sin(phase))
+		triangle := (2 / math.Pi) * math.Asin(math.Sin(phase))
+		return o.Amplitude.Value * o.kick(triangle)
 	case "square":
 		if math.Sin(phase) >= 0 {
 			return o.Amplitude.Value
 		}
 		return -o.Amplitude.Value
-	case "flat":
+	case "Flat":
 		return o.Amplitude.Value
 	}
 	return 0

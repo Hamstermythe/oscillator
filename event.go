@@ -169,6 +169,14 @@ func mouseDownUpdate(button, x, y int) {
 		osc.Waveform.Value = "flat"
 		fmt.Println("osc.Waveform.Value : ", osc.Waveform.Value)
 	}
+	if x > int(osc.Kick.PositionUp.X) && x < int(osc.Kick.PositionUp.X+osc.Kick.PositionUp.W) && y > int(osc.Kick.PositionUp.Y) && y < int(osc.Kick.PositionUp.Y+osc.Kick.PositionUp.H) {
+		osc.Kick.Value += 0.1
+		fmt.Println("oscs.Kick.Value up : ", osc.Kick.Value)
+	}
+	if x > int(osc.Kick.PositionDown.X) && x < int(osc.Kick.PositionDown.X+osc.Kick.PositionDown.W) && y > int(osc.Kick.PositionDown.Y) && y < int(osc.Kick.PositionDown.Y+osc.Kick.PositionDown.H) {
+		osc.Kick.Value -= 0.1
+		fmt.Println("osc.Kick.Value down : ", osc.Kick.Value)
+	}
 
 	if x > int(clientInterface.Enregistrer.X) && x < int(clientInterface.Enregistrer.X+clientInterface.Enregistrer.W) && y > int(clientInterface.Enregistrer.Y) && y < int(clientInterface.Enregistrer.Y+clientInterface.Enregistrer.H) {
 		fileName := "output.wav"

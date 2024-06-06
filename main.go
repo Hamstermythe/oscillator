@@ -355,6 +355,40 @@ func main() {
 			float64(osc.Waveform.PositionFlat.Y)+clientInterface.Style.FontSize,
 		)
 
+		text = "Kick         " + strconv.FormatFloat(osc.Kick.Value, 'f', 2, 64)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(osc.Kick.PositionDown.X),
+			float64(osc.Kick.PositionDown.Y)-clientInterface.Style.FontSize,
+		)
+		cv.SetFillStyle(0, 255, 0, 255)
+		cv.FillRect(
+			float64(osc.Kick.PositionUp.X),
+			float64(osc.Kick.PositionUp.Y),
+			float64(osc.Kick.PositionUp.W),
+			float64(osc.Kick.PositionUp.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"+",
+			float64(osc.Kick.PositionUp.X)+margeHorizontalePlus,
+			float64(osc.Kick.PositionUp.Y)+margeVertical,
+		)
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(osc.Kick.PositionDown.X),
+			float64(osc.Kick.PositionDown.Y),
+			float64(osc.Kick.PositionDown.W),
+			float64(osc.Kick.PositionDown.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			"-",
+			float64(osc.Kick.PositionDown.X)+margeHorizontaleMoins,
+			float64(osc.Kick.PositionDown.Y)+margeVertical,
+		)
+
 		// utils buttons------------------------------------------------------------------------------------------------------------------------------------
 		cv.SetFillStyle(255, 100, 100, 255)
 		cv.FillRect(

@@ -75,6 +75,11 @@ func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 			PositionSquare:   sdl.Rect{X: 300, Y: int32(wndHeight - 500), W: 80, H: 25},
 			PositionFlat:     sdl.Rect{X: 380, Y: int32(wndHeight - 500), W: 80, H: 25},
 		},
+		Kick: Kick{
+			Value:        0,
+			PositionUp:   sdl.Rect{X: 400, Y: int32(wndHeight - 400), W: 70, H: 50},
+			PositionDown: sdl.Rect{X: 300, Y: int32(wndHeight - 400), W: 70, H: 50},
+		},
 	}
 	ci.Oscillator = osc
 	ci.Enregistrer = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 250), W: 100, H: 50}
