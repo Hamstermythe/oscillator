@@ -1,15 +1,6 @@
 package main
 
-import (
-	"encoding/binary"
-	"fmt"
-	"io"
-	"os"
-	"os/signal"
-
-	"github.com/gordonklaus/portaudio"
-)
-
+/*
 func audio(fileName string) {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
@@ -119,3 +110,4 @@ func chk(err error) {
 		panic(err)
 	}
 }
+*/
