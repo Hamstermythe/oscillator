@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 
 	"github.com/tfriedel6/canvas"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/youpy/go-wav"
 )
 
 type ButtonString struct {
@@ -52,6 +56,9 @@ type SelectorOscillator struct {
 }
 
 type ClientInterface struct {
+	SampleRate        int
+	BitsPerSample     uint16
+	SeeCondensedWave  bool
 	AddOscillator     bool
 	DeleteOscillator  bool
 	ReloadSelector    bool
@@ -64,6 +71,8 @@ type ClientInterface struct {
 	DeroulantSelector ButtonBool
 	Selector          []SelectorOscillator
 	Wave              [][]float32
+	CondensedWave     []float32
+	ExportWave        sdl.Rect
 	Enregistrer       sdl.Rect
 	Lire              sdl.Rect
 	Stopper           sdl.Rect
@@ -72,6 +81,8 @@ type ClientInterface struct {
 func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 	var err error
 	//fontSize := 20.0
+	ci.SampleRate = 44100
+	ci.BitsPerSample = 16
 	ci.Style.FontSize = 20.0
 	ci.Style.Font, err = cv.LoadFont("font/Gaulois.ttf")
 	if err != nil {
@@ -82,6 +93,7 @@ func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 	//fmt.Println(style)
 	osc = clientInterface.newOscillator(cv)
 	ci.Oscillator = append(ci.Oscillator, osc)
+	ci.ExportWave = sdl.Rect{X: int32(wndWidth - 300), Y: int32(wndHeight - 250), W: 100, H: 50}
 	ci.Enregistrer = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 250), W: 100, H: 50}
 	ci.Lire = sdl.Rect{X: int32(wndWidth - 250), Y: int32(wndHeight - 100), W: 100, H: 50}
 	ci.Stopper = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 100), W: 100, H: 50}
@@ -290,8 +302,67 @@ func (ci *ClientInterface) newOscillator(cv *canvas.Canvas) *Oscillator {
 	}
 }
 
-func setWindow(screenX, screenY int) {
-	echelle = float64(screenX) / 1920
-	wndWidth = screenX
-	wndHeight = screenY
+func (ci *ClientInterface) condenseWave() {
+	indexOfGreaterWave := 0
+	for i := 0; i < len(ci.Wave); i++ {
+		if len(ci.Wave[indexOfGreaterWave]) < len(ci.Wave[i]) {
+			indexOfGreaterWave = i
+		}
+	}
+	samplesGreater := len(ci.Wave[indexOfGreaterWave])
+	condesedWave := make([]float32, samplesGreater)
+	diviser := make([]float32, samplesGreater)
+	for i := 0; i < len(ci.Wave); i++ {
+		wave := ci.Wave[i]
+		samplesThis := len(ci.Wave[i])
+		for j := 0; j < samplesThis; j++ {
+			condesedWave[j] += wave[j]
+			diviser[j]++
+		}
+	}
+	for i := 0; i < samplesGreater; i++ {
+		condesedWave[i] /= diviser[i]
+	}
+	ci.CondensedWave = condesedWave
+}
+
+func (ci *ClientInterface) SaveToWav(filename string) error {
+	ci.condenseWave()
+	data := ci.CondensedWave
+	samples := len(data)
+
+	// Create WAV file
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("Erreur lors de la création du fichier WAV : %w", err)
+	}
+	defer file.Close()
+
+	writer := wav.NewWriter(file, uint32(samples), 1, uint32(ci.SampleRate), ci.BitsPerSample)
+	var arrBytes []byte
+	for _, sample := range data {
+		arrBytes = append(arrBytes, byte(sample*(32767*8)))
+	}
+	writer.Write(arrBytes)
+
+	go func(filename string) {
+		var cmd *exec.Cmd
+
+		switch runtime.GOOS {
+		case "windows":
+			cmd = exec.Command("cmd", "/C", "start", filename)
+		case "linux":
+			cmd = exec.Command("bash", "-c", fmt.Sprintf("mplayer %s", filename))
+		default:
+			fmt.Println("Unsupported OS")
+			return
+		}
+
+		err := cmd.Run()
+		if err != nil {
+			fmt.Printf("Erreur lors de la lecture du fichier WAV : %v\n", err)
+		}
+	}(filename)
+
+	return nil
 }

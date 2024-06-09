@@ -87,14 +87,9 @@ func (o *Oscillator) boucleController(p float64) bool {
 	if boucleNumber == 0 {
 		boucleNumber = 1
 	}
-	pos := (o.SoundDuration.Value * o.SampleRate.Value * 2) / boucleNumber //o.SoundDuration.Value //readDuration // float64(o.SampleRate.Value)
-	//lectureChunk := o.Lecture.Value * o.SampleRate.Value * 2
-	//pauseChunk := o.Pause.Value * o.SampleRate.Value * 2
-	//ratioPos := pos / (o.SampleRate.Value * 2)
+	pos := (o.SoundDuration.Value * o.SampleRate.Value * 2) / boucleNumber
 	ratioPos := float64(int(p)%int(pos)) / pos
-	//fmt.Println(ratioPos, pos)
-	//ratioPos := pos / (readDuration * o.SampleRate.Value * 2)
-	return ratioPos < (o.Lecture.Value / totDuration) //o.SoundDuration.Value)
+	return ratioPos < (o.Lecture.Value / totDuration)
 }
 
 func (o *Oscillator) Value(p float64) float64 {
@@ -200,10 +195,8 @@ func (o *Oscillator) SetParams(a, f, p float64) {
 }
 
 func (o *Oscillator) GenerateWave() ([]float32, int) {
-	//ratioTimeBits := float64(o.BitsPerSample / 8)
-	//fmt.Println("ratioTimeBits: ", ratioTimeBits, ", o.BitsPerSample: ", o.BitsPerSample)
-	//samples := int(float64(o.SampleRate.Value) * o.SoundDuration.Value * ratioTimeBits)
-	samples := int(o.SoundDuration.Value * o.SampleRate.Value * 2) //* float64(o.BitsPerSample))
+	ratioTimeBits := float64(o.BitsPerSample / 8)
+	samples := int(o.SoundDuration.Value * o.SampleRate.Value * ratioTimeBits)
 	//samples := int(o.Frequency.Value * o.SoundDuration.Value * o.SampleRate.Value)
 	data := make([]float32, samples)
 	for p := 0; p < samples; p++ {

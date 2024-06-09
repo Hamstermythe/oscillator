@@ -18,6 +18,12 @@ var wndWidth, wndHeight int
 var souris = Souris{}
 var running = true
 
+func setWindow(screenX, screenY int) {
+	echelle = float64(screenX) / 1920
+	wndWidth = screenX
+	wndHeight = screenY
+}
+
 func main() {
 	// Initialiser SDL2 pour la vi
 	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
@@ -1044,6 +1050,23 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 	)
 
 	// utils buttons------------------------------------------------------------------------------------------------------------------------------------
+
+	cv.SetFillStyle(255, 100, 100, 255)
+	cv.FillRect(
+		float64(clientInterface.ExportWave.X),
+		float64(clientInterface.ExportWave.Y),
+		float64(clientInterface.ExportWave.W),
+		float64(clientInterface.ExportWave.H),
+	)
+	cv.SetFillStyle(255, 255, 255, 255)
+	margeVertical = (float64(clientInterface.ExportWave.H) - clientInterface.Style.FontSize) / 2
+	margeHorizontale := (float64(clientInterface.ExportWave.W) - cv.MeasureText("Export").Width) / 2
+	cv.FillText(
+		"Export",
+		float64(clientInterface.ExportWave.X)+margeVertical,
+		float64(clientInterface.ExportWave.Y)+margeHorizontale,
+	)
+
 	cv.SetFillStyle(255, 100, 100, 255)
 	cv.FillRect(
 		float64(clientInterface.Enregistrer.X),
@@ -1053,7 +1076,7 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 	)
 	cv.SetFillStyle(255, 255, 255, 255)
 	margeVertical = (float64(clientInterface.Enregistrer.H) - clientInterface.Style.FontSize) / 2
-	margeHorizontale := (float64(clientInterface.Enregistrer.W) - cv.MeasureText("Save").Width) / 2
+	margeHorizontale = (float64(clientInterface.Enregistrer.W) - cv.MeasureText("Save").Width) / 2
 	cv.FillText(
 		"Save",
 		float64(clientInterface.Enregistrer.X)+margeVertical,

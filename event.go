@@ -513,6 +513,11 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 
 	// client interface--------------------------------------------------------------------------------------------------------------------------
 
+	if x > int(clientInterface.ExportWave.X) && x < int(clientInterface.ExportWave.X+clientInterface.ExportWave.W) && y > int(clientInterface.ExportWave.Y) && y < int(clientInterface.ExportWave.Y+clientInterface.ExportWave.H) {
+		fileName := "output.wav"
+		osc.SaveToWav(fileName)
+		//osc.play(fileName)
+	}
 	if x > int(clientInterface.Enregistrer.X) && x < int(clientInterface.Enregistrer.X+clientInterface.Enregistrer.W) && y > int(clientInterface.Enregistrer.Y) && y < int(clientInterface.Enregistrer.Y+clientInterface.Enregistrer.H) {
 		fileName := "output.wav"
 		osc.SaveToWav(fileName)
