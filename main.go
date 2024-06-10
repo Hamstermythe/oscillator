@@ -543,38 +543,38 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 		float64(osc.Amplitude.PositionDown.Y)+margeVertical,
 	)
 
-	text = "Sample Rate   " + strconv.FormatFloat(osc.SampleRate.Value, 'f', 2, 64)
+	text = "Max   " + strconv.FormatFloat(osc.MaxAmplitude.Value, 'f', 2, 64)
 	cv.SetFillStyle(255, 255, 255, 255)
 	cv.FillText(
 		text,
-		float64(osc.SampleRate.PositionDown.X),
-		float64(osc.SampleRate.PositionDown.Y)-clientInterface.Style.FontSize,
+		float64(osc.MaxAmplitude.PositionDown.X),
+		float64(osc.MaxAmplitude.PositionDown.Y)-clientInterface.Style.FontSize,
 	)
 	cv.SetFillStyle(0, 255, 0, 255)
 	cv.FillRect(
-		float64(osc.SampleRate.PositionUp.X),
-		float64(osc.SampleRate.PositionUp.Y),
-		float64(osc.SampleRate.PositionUp.W),
-		float64(osc.SampleRate.PositionUp.H),
+		float64(osc.MaxAmplitude.PositionUp.X),
+		float64(osc.MaxAmplitude.PositionUp.Y),
+		float64(osc.MaxAmplitude.PositionUp.W),
+		float64(osc.MaxAmplitude.PositionUp.H),
 	)
 	cv.SetFillStyle(255, 255, 255, 255)
 	cv.FillText(
 		"+",
-		float64(osc.SampleRate.PositionUp.X)+margeHorizontalePlus,
-		float64(osc.SampleRate.PositionUp.Y)+margeVertical,
+		float64(osc.MaxAmplitude.PositionUp.X)+margeHorizontalePlus,
+		float64(osc.MaxAmplitude.PositionUp.Y)+margeVertical,
 	)
 	cv.SetFillStyle(255, 0, 0, 255)
 	cv.FillRect(
-		float64(osc.SampleRate.PositionDown.X),
-		float64(osc.SampleRate.PositionDown.Y),
-		float64(osc.SampleRate.PositionDown.W),
-		float64(osc.SampleRate.PositionDown.H),
+		float64(osc.MaxAmplitude.PositionDown.X),
+		float64(osc.MaxAmplitude.PositionDown.Y),
+		float64(osc.MaxAmplitude.PositionDown.W),
+		float64(osc.MaxAmplitude.PositionDown.H),
 	)
 	cv.SetFillStyle(255, 255, 255, 255)
 	cv.FillText(
 		"-",
-		float64(osc.SampleRate.PositionDown.X)+margeHorizontaleMoins,
-		float64(osc.SampleRate.PositionDown.Y)+margeVertical,
+		float64(osc.MaxAmplitude.PositionDown.X)+margeHorizontaleMoins,
+		float64(osc.MaxAmplitude.PositionDown.Y)+margeVertical,
 	)
 
 	text = "Frequency     " + strconv.FormatFloat(osc.Frequency.Value, 'f', 2, 64)
@@ -1051,6 +1051,51 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 
 	// utils buttons------------------------------------------------------------------------------------------------------------------------------------
 
+	if clientInterface.FileName.Value {
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(clientInterface.CloseFileName.Position.X),
+			float64(clientInterface.CloseFileName.Position.Y),
+			float64(clientInterface.CloseFileName.Position.W),
+			float64(clientInterface.CloseFileName.Position.H),
+		)
+		margeVertical = ((float64(clientInterface.CloseFileName.Position.H) - clientInterface.Style.FontSize) / 2) + clientInterface.Style.FontSize
+		margeHorizontale := (float64(clientInterface.CloseFileName.Position.W) - cv.MeasureText(clientInterface.CloseFileName.Value).Width) / 2
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			clientInterface.CloseFileName.Value,
+			float64(clientInterface.CloseFileName.Position.X)+margeHorizontale,
+			float64(clientInterface.CloseFileName.Position.Y)+margeVertical,
+		)
+
+		cv.SetFillStyle(100, 100, 100, 255)
+		cv.FillRect(
+			float64(clientInterface.FileName.PositionUp.X),
+			float64(clientInterface.FileName.PositionUp.Y),
+			float64(clientInterface.FileName.PositionUp.W),
+			float64(clientInterface.FileName.PositionUp.H),
+		)
+		text = clientInterface.FileName.Champ
+		for cv.MeasureText(text).Width > float64(clientInterface.FileName.PositionUp.W) {
+			text = text[1:]
+		}
+		margeHorizontale = (float64(clientInterface.FileName.PositionUp.W) - cv.MeasureText(text).Width) / 2
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(clientInterface.FileName.PositionUp.X)+margeHorizontale,
+			float64(clientInterface.FileName.PositionUp.Y)+margeVertical,
+		)
+		text = "Choose filename and press enter"
+		margeHorizontale = (float64(clientInterface.FileName.PositionUp.W) - cv.MeasureText(text).Width) / 2
+		cv.SetFillStyle(255, 255, 255, 255)
+		cv.FillText(
+			text,
+			float64(clientInterface.FileName.PositionUp.X)+margeHorizontale,
+			float64(clientInterface.FileName.PositionUp.Y)+margeVertical-float64(clientInterface.FileName.PositionUp.H),
+		)
+	}
+
 	cv.SetFillStyle(255, 100, 100, 255)
 	cv.FillRect(
 		float64(clientInterface.ExportWave.X),
@@ -1081,6 +1126,22 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 		"Save",
 		float64(clientInterface.Enregistrer.X)+margeVertical,
 		float64(clientInterface.Enregistrer.Y)+margeHorizontale,
+	)
+
+	cv.SetFillStyle(255, 100, 100, 255)
+	cv.FillRect(
+		float64(clientInterface.SaveAll.X),
+		float64(clientInterface.SaveAll.Y),
+		float64(clientInterface.SaveAll.W),
+		float64(clientInterface.SaveAll.H),
+	)
+	cv.SetFillStyle(255, 255, 255, 255)
+	margeVertical = (float64(clientInterface.SaveAll.H) - clientInterface.Style.FontSize) / 2
+	margeHorizontale = (float64(clientInterface.SaveAll.W) - cv.MeasureText("Save all").Width) / 2
+	cv.FillText(
+		"Save all",
+		float64(clientInterface.SaveAll.X)+margeVertical,
+		float64(clientInterface.SaveAll.Y)+margeHorizontale,
 	)
 
 	cv.SetFillStyle(0, 0, 255, 255)

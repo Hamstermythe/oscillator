@@ -54,9 +54,14 @@ type SelectorOscillator struct {
 	ButtonString
 	sdl.Color
 }
+type Champ struct {
+	Champ string
+	Cible string
+	ButtonBool
+}
 
 type ClientInterface struct {
-	SampleRate        int
+	SampleRate        float64
 	BitsPerSample     uint16
 	SeeCondensedWave  bool
 	AddOscillator     bool
@@ -72,15 +77,17 @@ type ClientInterface struct {
 	Selector          []SelectorOscillator
 	Wave              [][]float32
 	CondensedWave     []float32
+	CloseFileName     ButtonString
+	FileName          Champ
 	ExportWave        sdl.Rect
 	Enregistrer       sdl.Rect
+	SaveAll           sdl.Rect
 	Lire              sdl.Rect
 	Stopper           sdl.Rect
 }
 
 func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 	var err error
-	//fontSize := 20.0
 	ci.SampleRate = 44100
 	ci.BitsPerSample = 16
 	ci.Style.FontSize = 20.0
@@ -88,13 +95,31 @@ func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println(style)
 	cv.SetFont(ci.Style.Font, ci.Style.FontSize)
-	//fmt.Println(style)
 	osc = clientInterface.newOscillator(cv)
 	ci.Oscillator = append(ci.Oscillator, osc)
+	longueurChamp := cv.MeasureText("Choose filename and press enter").Width + 10
+	ci.CloseFileName = ButtonString{
+		Name:  "Close filename",
+		Value: "X",
+		Position: sdl.Rect{
+			X: int32(wndWidth - int(longueurChamp) - 50),
+			Y: int32(wndHeight - 350),
+			W: 50,
+			H: 50,
+		},
+	}
+	ci.FileName = Champ{
+		Champ: "",
+		ButtonBool: ButtonBool{
+			Value:        false,
+			PositionUp:   sdl.Rect{X: int32(wndWidth - int(longueurChamp)), Y: int32(wndHeight - 350), W: int32(longueurChamp), H: 50},
+			PositionDown: sdl.Rect{X: int32(wndWidth - int(longueurChamp)), Y: int32(wndHeight - 350), W: int32(longueurChamp), H: 50},
+		},
+	}
 	ci.ExportWave = sdl.Rect{X: int32(wndWidth - 300), Y: int32(wndHeight - 250), W: 100, H: 50}
 	ci.Enregistrer = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 250), W: 100, H: 50}
+	ci.SaveAll = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 190), W: 100, H: 50}
 	ci.Lire = sdl.Rect{X: int32(wndWidth - 250), Y: int32(wndHeight - 100), W: 100, H: 50}
 	ci.Stopper = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 100), W: 100, H: 50}
 	width := cv.MeasureText(">"+strconv.Itoa(len(ci.Oscillator))).Width + 10
@@ -230,8 +255,8 @@ func (ci *ClientInterface) newOscillator(cv *canvas.Canvas) *Oscillator {
 			PositionUp:   sdl.Rect{X: 150, Y: int32(wndHeight - 400), W: 70, H: 50},
 			PositionDown: sdl.Rect{X: 50, Y: int32(wndHeight - 400), W: 70, H: 50},
 		},
-		SampleRate: ButtonPlusMoins{
-			Value:        44100,
+		MaxAmplitude: ButtonPlusMoins{
+			Value:        1,
 			PositionUp:   sdl.Rect{X: 150, Y: int32(wndHeight - 300), W: 70, H: 50},
 			PositionDown: sdl.Rect{X: 50, Y: int32(wndHeight - 300), W: 70, H: 50},
 		},
@@ -316,8 +341,10 @@ func (ci *ClientInterface) condenseWave() {
 		wave := ci.Wave[i]
 		samplesThis := len(ci.Wave[i])
 		for j := 0; j < samplesThis; j++ {
-			condesedWave[j] += wave[j]
-			diviser[j]++
+			if wave[j] != 0 {
+				condesedWave[j] += wave[j]
+				diviser[j]++
+			}
 		}
 	}
 	for i := 0; i < samplesGreater; i++ {
@@ -326,8 +353,46 @@ func (ci *ClientInterface) condenseWave() {
 	ci.CondensedWave = condesedWave
 }
 
-func (ci *ClientInterface) SaveToWav(filename string) error {
-	ci.condenseWave()
+func (ci *ClientInterface) amalgameWave() {
+	indexOfGreaterWave := 0
+	for i := 0; i < len(ci.Wave); i++ {
+		if len(ci.Wave[indexOfGreaterWave]) < len(ci.Wave[i]) {
+			indexOfGreaterWave = i
+		}
+	}
+	samplesGreater := len(ci.Wave[indexOfGreaterWave])
+	totalWave := make([]float32, samplesGreater*len(ci.Wave))
+	for i := 0; i < len(ci.Wave); i++ {
+		wave := ci.Wave[i]
+		samplesThis := len(wave)
+		for j := 0; j < samplesThis; j++ {
+			ref := (j * len(ci.Wave)) + i
+			totalWave[ref] = wave[j]
+		}
+	}
+	amalgamedWave := make([]float32, samplesGreater)
+	ref := 0
+	for i := 0; i < samplesGreater; i++ {
+		indexInTot := (i * len(ci.Wave)) + ref
+		amalgamedWave[i] = totalWave[indexInTot]
+		ref++
+		if ref == len(ci.Wave) {
+			ref = 0
+			if len(ci.Wave)%2 == 0 {
+				ref -= 1
+			}
+		}
+	}
+	ci.CondensedWave = amalgamedWave
+
+}
+
+func (ci *ClientInterface) SaveToWav(filename, exportOrSave string) error {
+	if exportOrSave == "export" {
+		ci.condenseWave()
+	} else if exportOrSave == "save" {
+		ci.amalgameWave()
+	}
 	data := ci.CondensedWave
 	samples := len(data)
 
@@ -365,4 +430,19 @@ func (ci *ClientInterface) SaveToWav(filename string) error {
 	}(filename)
 
 	return nil
+}
+
+func (ci *ClientInterface) saveAll(dirName string) {
+	// Create directory
+	path := "res/user/all/" + dirName
+	err := os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		fmt.Printf("Erreur lors de la création du dossier : %v\n", err)
+		return
+	}
+	for i, o := range ci.Oscillator {
+		fileName := "osc_" + strconv.Itoa(i) + ".json"
+		o.save(path + "/" + fileName)
+	}
+	ci.SaveToWav(path+"/wave.wav", "save")
 }

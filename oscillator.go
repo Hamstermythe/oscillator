@@ -1,11 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
-	"os/exec"
-	"runtime"
 
 	"github.com/youpy/go-wav"
 )
@@ -23,7 +22,7 @@ type Oscillator struct {
 	// configurable fields column 1
 	SoundDuration ButtonPlusMoins
 	Amplitude     ButtonPlusMoins
-	SampleRate    ButtonPlusMoins
+	MaxAmplitude  ButtonPlusMoins
 	Frequency     ButtonPlusMoins
 	Phase         ButtonPlusMoins
 	// configurable fields column 2
@@ -45,7 +44,7 @@ func (o *Oscillator) kick(phase float64) float64 {
 	if sine > 0 {
 		return math.Pow(sine, 1/o.Kick.Value)
 	}
-	return math.Pow(-sine, 1/o.Kick.Value)
+	return -math.Pow(-sine, 1/o.Kick.Value)
 }
 
 func (o *Oscillator) hauteur(phase, p, value float64) float64 {
@@ -68,15 +67,24 @@ func (o *Oscillator) InverseurY(phase float64) float64 {
 	return -math.Pow(-sine, o.AsymetrieY.Value)
 }
 
+func (o *Oscillator) cutAmplitude(value float64) float64 {
+	if value > o.MaxAmplitude.Value {
+		return o.MaxAmplitude.Value
+	} else if value < -o.MaxAmplitude.Value {
+		return -o.MaxAmplitude.Value
+	}
+	return value
+}
+
 // retourne true si la valeur est contenu dans l'interval de lecture
 func (o *Oscillator) boucleController(p float64) bool {
 	// position = p / sampleRate
 	// si position < démarrage => val = 0
 	// si position > arret => val = 0
-	// temps de rotation de lecture = lecture + pause => exemple: 1 sec
+	// temps de rotation de lecture = lecture + pause
 	// position en temps = position / sampleRate
 	// si position en temps > lecture => val = 0
-	if p < o.Start.Value*o.SampleRate.Value*2 || p > o.End.Value*o.SampleRate.Value*2 {
+	if p < o.Start.Value*clientInterface.SampleRate*2 || p > o.End.Value*clientInterface.SampleRate*2 {
 		return false
 	}
 	if o.Lecture.Value < 0.09 && o.Lecture.Value > -0.09 {
@@ -87,8 +95,8 @@ func (o *Oscillator) boucleController(p float64) bool {
 	if boucleNumber == 0 {
 		boucleNumber = 1
 	}
-	pos := (o.SoundDuration.Value * o.SampleRate.Value * 2) / boucleNumber
-	ratioPos := float64(int(p)%int(pos)) / pos
+	pos := (o.SoundDuration.Value * clientInterface.SampleRate * 2) / boucleNumber
+	ratioPos := float64(int(p-(o.Start.Value*clientInterface.SampleRate*2))%int(pos)) / pos
 	return ratioPos < (o.Lecture.Value / totDuration)
 }
 
@@ -96,7 +104,7 @@ func (o *Oscillator) Value(p float64) float64 {
 	if !o.boucleController(p) {
 		return 0
 	}
-	t := float64(p) / float64(o.SampleRate.Value) //(o.SoundDuration.Value*o.Frequency.Value)) // / float64(o.Frequency.Value))
+	t := float64(p) / float64(clientInterface.SampleRate) //(o.SoundDuration.Value*o.Frequency.Value)) // / float64(o.Frequency.Value))
 	phase := o.Frequency.Value*t + o.Phase.Value
 	//phase := t + o.Phase.Value/o.Frequency.Value
 	val := 0.0
@@ -142,6 +150,7 @@ func (o *Oscillator) Value(p float64) float64 {
 	if o.Hauteur.Value > 0 || o.Hauteur.Value < 0 {
 		asymVal = o.hauteur(phase, p, val)
 	}
+	asymVal = o.cutAmplitude(asymVal)
 
 	asymVal = o.Amplitude.Value * asymVal
 	//if math.Sin(phase) == 0.0 {
@@ -168,35 +177,9 @@ func (o *Oscillator) Value(p float64) float64 {
 	return asymVal
 }
 
-func (o *Oscillator) Update(dt float64) {
-	o.Phase.Value += dt * o.Frequency.Value
-}
-
-func (o *Oscillator) Reset() {
-	o.Phase.Value = 0
-}
-
-func (o *Oscillator) SetAmplitude(a float64) {
-	o.Amplitude.Value = a
-}
-
-func (o *Oscillator) SetFrequency(f float64) {
-	o.Frequency.Value = f
-}
-
-func (o *Oscillator) SetPhase(p float64) {
-	o.Phase.Value = p
-}
-
-func (o *Oscillator) SetParams(a, f, p float64) {
-	o.Amplitude.Value = a
-	o.Frequency.Value = f
-	o.Phase.Value = p
-}
-
 func (o *Oscillator) GenerateWave() ([]float32, int) {
 	ratioTimeBits := float64(o.BitsPerSample / 8)
-	samples := int(o.SoundDuration.Value * o.SampleRate.Value * ratioTimeBits)
+	samples := int(o.SoundDuration.Value * clientInterface.SampleRate * ratioTimeBits)
 	//samples := int(o.Frequency.Value * o.SoundDuration.Value * o.SampleRate.Value)
 	data := make([]float32, samples)
 	for p := 0; p < samples; p++ {
@@ -206,43 +189,47 @@ func (o *Oscillator) GenerateWave() ([]float32, int) {
 	return data, samples
 }
 
-func (o *Oscillator) SaveToWav(filename string) error {
-	data, samples := o.GenerateWave()
-
-	// Create WAV file
-	file, err := os.Create(filename)
+// enregistre l'oscillateur dans un fichier JSON dans le dossier res/user
+func (o *Oscillator) save(path string) {
+	arrByte, err := json.Marshal(o)
 	if err != nil {
-		return fmt.Errorf("Erreur lors de la création du fichier WAV : %w", err)
+		fmt.Println("Erreur lors de la conversion de l'oscillateur en JSON:", err.Error())
 	}
-	defer file.Close()
-
-	writer := wav.NewWriter(file, uint32(samples), 1, uint32(o.SampleRate.Value), o.BitsPerSample)
-	var arrBytes []byte
-	for _, sample := range data {
-		arrBytes = append(arrBytes, byte(sample*(32767*8)))
+	err = os.WriteFile(path, arrByte, 0644)
+	if err != nil {
+		fmt.Println("Erreur lors de l'écriture du fichier JSON:", err.Error())
 	}
-	writer.Write(arrBytes)
+}
 
-	go func(filename string) {
-		var cmd *exec.Cmd
+// charge un oscillateur depuis un fichier JSON dans le dossier res/user
+func (o *Oscillator) load(filename string) {
+	arrByte, err := os.ReadFile("res/user" + filename)
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture du fichier JSON:", err.Error())
+	}
+	var loadedOscillator Oscillator
+	err = json.Unmarshal(arrByte, &loadedOscillator)
+	if err != nil {
+		fmt.Println("Erreur lors de la conversion du JSON en oscillateur:", err.Error())
+		return
+	}
+	clientInterface.Oscillator = append(clientInterface.Oscillator, &loadedOscillator)
+	clientInterface.CurrentOscillator = len(clientInterface.Oscillator) - 1
+	clientInterface.ReloadSelector = true
+	clientInterface.ReloadWave = true
+}
 
-		switch runtime.GOOS {
-		case "windows":
-			cmd = exec.Command("cmd", "/C", "start", filename)
-		case "linux":
-			cmd = exec.Command("bash", "-c", fmt.Sprintf("mplayer %s", filename))
-		default:
-			fmt.Println("Unsupported OS")
-			return
-		}
-
-		err := cmd.Run()
-		if err != nil {
-			fmt.Printf("Erreur lors de la lecture du fichier WAV : %v\n", err)
-		}
-	}(filename)
-
-	return nil
+// retourne le noms des fichiers enregistrés dans le dossier /res/user
+func (o *Oscillator) parseNameOfFileRegistred() []string {
+	files, err := os.ReadDir("res/user")
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture du dossier /res/user :", err.Error())
+	}
+	var filesName []string
+	for _, file := range files {
+		filesName = append(filesName, file.Name())
+	}
+	return filesName
 }
 
 func (o *Oscillator) readWaveFile(filename string) ([]float32, float64) {
@@ -261,7 +248,7 @@ func (o *Oscillator) readWaveFile(filename string) ([]float32, float64) {
 	for _, sample := range samples {
 		fileData = append(fileData, float32(sample.Values[0])/(32767*8))
 	}
-	soundDuration := float64(len(samples)) / float64(o.SampleRate.Value)
+	soundDuration := float64(len(samples)) / float64(clientInterface.SampleRate)
 
 	return fileData, soundDuration //len(samples)
 }

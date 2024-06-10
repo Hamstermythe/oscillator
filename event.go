@@ -37,14 +37,14 @@ func (s *Souris) Action() {
 			}
 		}
 	} else if s.Click == "Amplitude+" {
-		osc.Amplitude.Value += 0.1
+		osc.Amplitude.Value += 0.01
 	} else if s.Click == "Amplitude-" {
-		osc.Amplitude.Value -= 0.1
+		osc.Amplitude.Value -= 0.01
 	} else if s.Click == "SampleRate+" {
-		osc.SampleRate.Value += 100
+		osc.MaxAmplitude.Value += 0.01
 	} else if s.Click == "SampleRate-" {
-		if osc.SampleRate.Value > 1000 {
-			osc.SampleRate.Value -= 100
+		if osc.MaxAmplitude.Value > 0.01 {
+			osc.MaxAmplitude.Value -= 0.01
 		}
 	} else if s.Click == "Frequency+" {
 		osc.Frequency.Value += 1
@@ -71,11 +71,11 @@ func (s *Souris) Action() {
 	if s.Click == "Lecture+" {
 		osc.Lecture.Value += 0.1
 	} else if s.Click == "Lecture-" && osc.Lecture.Value > 0 {
-		osc.Lecture.Value -= 0.1
+		osc.Lecture.Value -= 0.01
 	} else if s.Click == "Pause+" {
-		osc.Pause.Value += 0.1
+		osc.Pause.Value += 0.01
 	} else if s.Click == "Pause-" && osc.Pause.Value > 0 {
-		osc.Pause.Value -= 0.1
+		osc.Pause.Value -= 0.01
 	} else if s.Click == "Start+" && osc.Start.Value < osc.End.Value {
 		osc.Start.Value += 0.1
 	} else if s.Click == "Start-" && osc.Start.Value > 0 {
@@ -112,8 +112,11 @@ func (s *Souris) Action() {
 	}
 
 	// correction d'imprécision
-	if osc.Amplitude.Value < 0.09 && osc.Amplitude.Value > -0.09 {
+	if osc.Amplitude.Value < 0.009 && osc.Amplitude.Value > -0.009 {
 		osc.Amplitude.Value = 0.0
+	}
+	if osc.MaxAmplitude.Value < 0.009 && osc.MaxAmplitude.Value > -0.009 {
+		osc.MaxAmplitude.Value = 0.0
 	}
 	if osc.Frequency.Value < 0.09 && osc.Frequency.Value > -0.09 {
 		osc.Frequency.Value = 0.0
@@ -130,10 +133,10 @@ func (s *Souris) Action() {
 	if osc.AsymetrieY.Value < 0.09 && osc.AsymetrieY.Value > -0.09 {
 		osc.AsymetrieY.Value = 0.0
 	}
-	if osc.Lecture.Value < 0.09 && osc.Lecture.Value > -0.09 {
+	if osc.Lecture.Value < 0.009 && osc.Lecture.Value > -0.009 {
 		osc.Lecture.Value = 0.0
 	}
-	if osc.Pause.Value < 0.09 && osc.Pause.Value > -0.09 {
+	if osc.Pause.Value < 0.009 && osc.Pause.Value > -0.009 {
 		osc.Pause.Value = 0.0
 	}
 	if osc.Start.Value < 0.09 && osc.Start.Value > -0.09 {
@@ -168,11 +171,41 @@ func addEvent(wnd *sdlcanvas.Window) *sdlcanvas.Window {
 			} else if event.State == sdl.RELEASED {
 				mouseUpUpdate(int(event.Button))
 			}
+		case *sdl.TextInputEvent:
+			text := event.GetText()
+			fmt.Println(text)
+			if clientInterface.FileName.Value {
+				clientInterface.FileName.Champ += text
+			}
 		case *sdl.KeyboardEvent:
-			if event.Keysym.Scancode == sdl.SCANCODE_ESCAPE || event.Keysym.Scancode == sdl.SCANCODE_F12 {
+			// touche effacer
+			if clientInterface.FileName.Value && event.Keysym.Scancode == sdl.SCANCODE_BACKSPACE {
+				if len(clientInterface.FileName.Champ) > 0 {
+					clientInterface.FileName.Champ = clientInterface.FileName.Champ[:len(clientInterface.FileName.Champ)-1]
+				}
+				// touche echap
+			} else if clientInterface.FileName.Value && event.Keysym.Scancode == sdl.SCANCODE_ESCAPE {
+				clientInterface.FileName.Champ = ""
+				clientInterface.FileName.Value = false
+				// touche entrée
+			} else if clientInterface.FileName.Value && event.Keysym.Scancode == sdl.SCANCODE_RETURN {
+				if len(clientInterface.FileName.Champ) > 0 {
+					if clientInterface.FileName.Cible == "All" {
+						clientInterface.saveAll(clientInterface.FileName.Champ)
+						clientInterface.FileName.Champ = ""
+						clientInterface.FileName.Value = false
+					} else if clientInterface.FileName.Cible == "Osc" {
+						osc.save("res/user/osc/" + clientInterface.FileName.Champ + ".json")
+						clientInterface.FileName.Champ = ""
+						clientInterface.FileName.Value = false
+					}
+				}
+			} else if event.Keysym.Scancode == sdl.SCANCODE_ESCAPE || event.Keysym.Scancode == sdl.SCANCODE_F12 {
 				running = false
 				return
 			}
+			//stringEvent := sdl.GetKeyName(sdl.Keycode(event.Keysym.Scancode))
+			//fmt.Println(stringEvent)
 		}
 	}
 	return wnd
@@ -296,26 +329,26 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 	if x > int(osc.Amplitude.PositionUp.X) && x < int(osc.Amplitude.PositionUp.X+osc.Amplitude.PositionUp.W) && y > int(osc.Amplitude.PositionUp.Y) && y < int(osc.Amplitude.PositionUp.Y+osc.Amplitude.PositionUp.H) {
 		souris.Click = "Amplitude+"
 		souris.DateClick = time.Now()
-		osc.Amplitude.Value += 0.1
+		osc.Amplitude.Value += 0.01
 		fmt.Println("osc.Amplitude.Value up : ", osc.Amplitude.Value)
 	}
 	if x > int(osc.Amplitude.PositionDown.X) && x < int(osc.Amplitude.PositionDown.X+osc.Amplitude.PositionDown.W) && y > int(osc.Amplitude.PositionDown.Y) && y < int(osc.Amplitude.PositionDown.Y+osc.Amplitude.PositionDown.H) {
 		souris.Click = "Amplitude-"
 		souris.DateClick = time.Now()
-		osc.Amplitude.Value -= 0.1
+		osc.Amplitude.Value -= 0.01
 		fmt.Println("osc.Amplitude.Value down : ", osc.Amplitude.Value)
 	}
-	if x > int(osc.SampleRate.PositionUp.X) && x < int(osc.SampleRate.PositionUp.X+osc.SampleRate.PositionUp.W) && y > int(osc.SampleRate.PositionUp.Y) && y < int(osc.SampleRate.PositionUp.Y+osc.SampleRate.PositionUp.H) {
+	if x > int(osc.MaxAmplitude.PositionUp.X) && x < int(osc.MaxAmplitude.PositionUp.X+osc.MaxAmplitude.PositionUp.W) && y > int(osc.MaxAmplitude.PositionUp.Y) && y < int(osc.MaxAmplitude.PositionUp.Y+osc.MaxAmplitude.PositionUp.H) {
 		souris.Click = "SampleRate+"
 		souris.DateClick = time.Now()
-		osc.SampleRate.Value += 100
-		fmt.Println("osc.SampleRate.Value up : ", osc.SampleRate.Value)
+		osc.MaxAmplitude.Value += 0.01
+		fmt.Println("osc.SampleRate.Value up : ", osc.MaxAmplitude.Value)
 	}
-	if x > int(osc.SampleRate.PositionDown.X) && x < int(osc.SampleRate.PositionDown.X+osc.SampleRate.PositionDown.W) && y > int(osc.SampleRate.PositionDown.Y) && y < int(osc.SampleRate.PositionDown.Y+osc.SampleRate.PositionDown.H) {
+	if x > int(osc.MaxAmplitude.PositionDown.X) && x < int(osc.MaxAmplitude.PositionDown.X+osc.MaxAmplitude.PositionDown.W) && y > int(osc.MaxAmplitude.PositionDown.Y) && y < int(osc.MaxAmplitude.PositionDown.Y+osc.MaxAmplitude.PositionDown.H) {
 		souris.Click = "SampleRate-"
 		souris.DateClick = time.Now()
-		osc.SampleRate.Value -= 100
-		fmt.Println("osc.SampleRate.Value down : ", osc.SampleRate.Value)
+		osc.MaxAmplitude.Value -= 0.01
+		fmt.Println("osc.SampleRate.Value down : ", osc.MaxAmplitude.Value)
 	}
 	if x > int(osc.Frequency.PositionUp.X) && x < int(osc.Frequency.PositionUp.X+osc.Frequency.PositionUp.W) && y > int(osc.Frequency.PositionUp.Y) && y < int(osc.Frequency.PositionUp.Y+osc.Frequency.PositionUp.H) {
 		souris.Click = "Frequency+"
@@ -402,28 +435,28 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 	if x > int(osc.Lecture.PositionUp.X) && x < int(osc.Lecture.PositionUp.X+osc.Lecture.PositionUp.W) && y > int(osc.Lecture.PositionUp.Y) && y < int(osc.Lecture.PositionUp.Y+osc.Lecture.PositionUp.H) {
 		souris.Click = "Lecture+"
 		souris.DateClick = time.Now()
-		osc.Lecture.Value += 0.1
+		osc.Lecture.Value += 0.01
 		fmt.Println("osc.Lecture.Value up : ", osc.Lecture.Value)
 	}
 	if x > int(osc.Lecture.PositionDown.X) && x < int(osc.Lecture.PositionDown.X+osc.Lecture.PositionDown.W) && y > int(osc.Lecture.PositionDown.Y) && y < int(osc.Lecture.PositionDown.Y+osc.Lecture.PositionDown.H) {
 		if osc.Lecture.Value > 0 {
 			souris.Click = "Lecture-"
 			souris.DateClick = time.Now()
-			osc.Lecture.Value -= 0.1
+			osc.Lecture.Value -= 0.01
 			fmt.Println("osc.Lecture.Value down : ", osc.Lecture.Value)
 		}
 	}
 	if x > int(osc.Pause.PositionUp.X) && x < int(osc.Pause.PositionUp.X+osc.Pause.PositionUp.W) && y > int(osc.Pause.PositionUp.Y) && y < int(osc.Pause.PositionUp.Y+osc.Pause.PositionUp.H) {
 		souris.Click = "Pause+"
 		souris.DateClick = time.Now()
-		osc.Pause.Value += 0.1
+		osc.Pause.Value += 0.01
 		fmt.Println("osc.Pause.Value up : ", osc.Pause.Value)
 	}
 	if x > int(osc.Pause.PositionDown.X) && x < int(osc.Pause.PositionDown.X+osc.Pause.PositionDown.W) && y > int(osc.Pause.PositionDown.Y) && y < int(osc.Pause.PositionDown.Y+osc.Pause.PositionDown.H) {
 		if osc.Pause.Value > 0 {
 			souris.Click = "Pause-"
 			souris.DateClick = time.Now()
-			osc.Pause.Value -= 0.1
+			osc.Pause.Value -= 0.01
 			fmt.Println("osc.Pause.Value down : ", osc.Pause.Value)
 		}
 	}
@@ -431,7 +464,7 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 		if osc.Start.Value < osc.End.Value {
 			souris.Click = "Start+"
 			souris.DateClick = time.Now()
-			osc.Start.Value += 0.1
+			osc.Start.Value += 0.01
 			fmt.Println("osc.Start.Value up : ", osc.Start.Value)
 		}
 	}
@@ -439,7 +472,7 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 		if osc.Start.Value > 0 {
 			souris.Click = "Start-"
 			souris.DateClick = time.Now()
-			osc.Start.Value -= 0.1
+			osc.Start.Value -= 0.01
 			fmt.Println("osc.Start.Value down : ", osc.Start.Value)
 		}
 	}
@@ -513,17 +546,45 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 
 	// client interface--------------------------------------------------------------------------------------------------------------------------
 
+	if x > int(clientInterface.CloseFileName.Position.X) && x < int(clientInterface.CloseFileName.Position.X+clientInterface.CloseFileName.Position.W) && y > int(clientInterface.CloseFileName.Position.Y) && y < int(clientInterface.CloseFileName.Position.Y+clientInterface.CloseFileName.Position.H) {
+		clientInterface.FileName.Champ = ""
+		clientInterface.FileName.Value = false
+	}
 	if x > int(clientInterface.ExportWave.X) && x < int(clientInterface.ExportWave.X+clientInterface.ExportWave.W) && y > int(clientInterface.ExportWave.Y) && y < int(clientInterface.ExportWave.Y+clientInterface.ExportWave.H) {
 		fileName := "output.wav"
-		osc.SaveToWav(fileName)
+		clientInterface.SaveToWav(fileName, "export")
 		//osc.play(fileName)
 	}
 	if x > int(clientInterface.Enregistrer.X) && x < int(clientInterface.Enregistrer.X+clientInterface.Enregistrer.W) && y > int(clientInterface.Enregistrer.Y) && y < int(clientInterface.Enregistrer.Y+clientInterface.Enregistrer.H) {
-		fileName := "output.wav"
-		osc.SaveToWav(fileName)
-		//osc.play(fileName)
+		if clientInterface.FileName.Value {
+			if clientInterface.FileName.Cible == "Osc" && clientInterface.FileName.Champ != "" {
+				osc.save("osc/" + clientInterface.FileName.Champ + ".json")
+				clientInterface.FileName.Value = false
+			}
+			clientInterface.FileName.Cible = "Osc"
+			clientInterface.FileName.Champ = ""
+			return
+		}
+		clientInterface.FileName.Value = true
+		clientInterface.FileName.Cible = "Osc"
+		clientInterface.FileName.Champ = ""
+	}
+	if x > int(clientInterface.SaveAll.X) && x < int(clientInterface.SaveAll.X+clientInterface.SaveAll.W) && y > int(clientInterface.SaveAll.Y) && y < int(clientInterface.SaveAll.Y+clientInterface.SaveAll.H) {
+		if clientInterface.FileName.Value {
+			if clientInterface.FileName.Cible == "All" && clientInterface.FileName.Champ != "" {
+				clientInterface.saveAll(clientInterface.FileName.Champ)
+				clientInterface.FileName.Value = false
+			}
+			clientInterface.FileName.Cible = "All"
+			clientInterface.FileName.Champ = ""
+			return
+		}
+		clientInterface.FileName.Value = true
+		clientInterface.FileName.Cible = "All"
+		clientInterface.FileName.Champ = ""
 	}
 	if x > int(clientInterface.Lire.X) && x < int(clientInterface.Lire.X+clientInterface.Lire.W) && y > int(clientInterface.Lire.Y) && y < int(clientInterface.Lire.Y+clientInterface.Lire.H) {
+		clientInterface.SaveToWav("res/temp/output.wav", "save")
 		/*
 			fileName := "output.wav"
 			osc.stop(fileName)
