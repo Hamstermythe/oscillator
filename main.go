@@ -64,7 +64,7 @@ func main() {
 			cv.SetFillStyle(0, 0, 0, 255)
 			cv.FillRect(0, 0, float64(wndWidth), float64(wndHeight))
 			clientInterface.drawUncurrentWave(cv)
-			clientInterface.drawOscillator(cv)
+			clientInterface.drawInterface(cv)
 		}
 		// Présenter le rendu à l'écran
 		if clientInterface.AddOscillator {
@@ -263,7 +263,7 @@ func (ci *ClientInterface) drawUncurrentWave(cv *canvas.Canvas) {
 	}
 }
 
-func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
+func (ci *ClientInterface) drawInterface(cv *canvas.Canvas) {
 
 	// configurables bool fields -----------------------------------------------------------------------------------------------------------------------
 
@@ -1098,18 +1098,18 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 
 	cv.SetFillStyle(255, 100, 100, 255)
 	cv.FillRect(
-		float64(clientInterface.ExportWave.X),
-		float64(clientInterface.ExportWave.Y),
-		float64(clientInterface.ExportWave.W),
-		float64(clientInterface.ExportWave.H),
+		float64(clientInterface.OpenMix.X),
+		float64(clientInterface.OpenMix.Y),
+		float64(clientInterface.OpenMix.W),
+		float64(clientInterface.OpenMix.H),
 	)
 	cv.SetFillStyle(255, 255, 255, 255)
-	margeVertical = (float64(clientInterface.ExportWave.H) - clientInterface.Style.FontSize) / 2
-	margeHorizontale := (float64(clientInterface.ExportWave.W) - cv.MeasureText("Export").Width) / 2
+	margeVertical = ((float64(clientInterface.OpenMix.H) - clientInterface.Style.FontSize) / 2) + clientInterface.Style.FontSize
+	margeHorizontale := (float64(clientInterface.OpenMix.W) - cv.MeasureText("Open Mix").Width) / 2
 	cv.FillText(
-		"Export",
-		float64(clientInterface.ExportWave.X)+margeVertical,
-		float64(clientInterface.ExportWave.Y)+margeHorizontale,
+		"Open mix",
+		float64(clientInterface.OpenMix.X)+margeHorizontale, //+margeVertical,
+		float64(clientInterface.OpenMix.Y)+margeVertical,    //+margeHorizontale+clientInterface.Style.FontSize,
 	)
 
 	cv.SetFillStyle(255, 100, 100, 255)
@@ -1120,12 +1120,12 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 		float64(clientInterface.Enregistrer.H),
 	)
 	cv.SetFillStyle(255, 255, 255, 255)
-	margeVertical = (float64(clientInterface.Enregistrer.H) - clientInterface.Style.FontSize) / 2
-	margeHorizontale = (float64(clientInterface.Enregistrer.W) - cv.MeasureText("Save").Width) / 2
+	margeVertical = ((float64(clientInterface.Enregistrer.H) - clientInterface.Style.FontSize) / 2) + clientInterface.Style.FontSize
+	margeHorizontale = (float64(clientInterface.Enregistrer.W) - cv.MeasureText("Save osc").Width) / 2
 	cv.FillText(
-		"Save",
-		float64(clientInterface.Enregistrer.X)+margeVertical,
-		float64(clientInterface.Enregistrer.Y)+margeHorizontale,
+		"Save osc",
+		float64(clientInterface.Enregistrer.X)+margeHorizontale, //+margeVertical,
+		float64(clientInterface.Enregistrer.Y)+margeVertical,    //+margeHorizontale,
 	)
 
 	cv.SetFillStyle(255, 100, 100, 255)
@@ -1136,12 +1136,12 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 		float64(clientInterface.SaveAll.H),
 	)
 	cv.SetFillStyle(255, 255, 255, 255)
-	margeVertical = (float64(clientInterface.SaveAll.H) - clientInterface.Style.FontSize) / 2
+	margeVertical = ((float64(clientInterface.SaveAll.H) - clientInterface.Style.FontSize) / 2) + clientInterface.Style.FontSize
 	margeHorizontale = (float64(clientInterface.SaveAll.W) - cv.MeasureText("Save all").Width) / 2
 	cv.FillText(
-		"Save all",
-		float64(clientInterface.SaveAll.X)+margeVertical,
-		float64(clientInterface.SaveAll.Y)+margeHorizontale,
+		"Save mix",
+		float64(clientInterface.SaveAll.X)+margeHorizontale, //+margeVertical,
+		float64(clientInterface.SaveAll.Y)+margeVertical,    //+margeHorizontale+clientInterface.Style.FontSize,
 	)
 
 	cv.SetFillStyle(0, 0, 255, 255)
@@ -1160,20 +1160,21 @@ func (ci *ClientInterface) drawOscillator(cv *canvas.Canvas) {
 		float64(clientInterface.Lire.Y)+margeHorizontale,
 	)
 
-	cv.SetFillStyle(255, 0, 0, 255)
-	cv.FillRect(
-		float64(clientInterface.Stopper.X),
-		float64(clientInterface.Stopper.Y),
-		float64(clientInterface.Stopper.W),
-		float64(clientInterface.Stopper.H),
-	)
-	cv.SetFillStyle(255, 255, 255, 255)
-	margeVertical = (float64(clientInterface.Stopper.H) - clientInterface.Style.FontSize) / 2
-	margeHorizontale = (float64(clientInterface.Stopper.W) - cv.MeasureText("Stop").Width) / 2
-	cv.FillText(
-		"Stop",
-		float64(clientInterface.Stopper.X)+margeVertical,
-		float64(clientInterface.Stopper.Y)+margeHorizontale,
-	)
-
+	/*
+		cv.SetFillStyle(255, 0, 0, 255)
+		cv.FillRect(
+			float64(clientInterface.Stopper.X),
+			float64(clientInterface.Stopper.Y),
+			float64(clientInterface.Stopper.W),
+			float64(clientInterface.Stopper.H),
+		)
+		cv.SetFillStyle(255, 255, 255, 255)
+		margeVertical = (float64(clientInterface.Stopper.H) - clientInterface.Style.FontSize) / 2
+		margeHorizontale = (float64(clientInterface.Stopper.W) - cv.MeasureText("Stop").Width) / 2
+		cv.FillText(
+			"Stop",
+			float64(clientInterface.Stopper.X)+margeVertical,
+			float64(clientInterface.Stopper.Y)+margeHorizontale,
+		)
+	*/
 }

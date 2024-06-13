@@ -201,37 +201,6 @@ func (o *Oscillator) save(path string) {
 	}
 }
 
-// charge un oscillateur depuis un fichier JSON dans le dossier res/user
-func (o *Oscillator) load(filename string) {
-	arrByte, err := os.ReadFile("res/user" + filename)
-	if err != nil {
-		fmt.Println("Erreur lors de la lecture du fichier JSON:", err.Error())
-	}
-	var loadedOscillator Oscillator
-	err = json.Unmarshal(arrByte, &loadedOscillator)
-	if err != nil {
-		fmt.Println("Erreur lors de la conversion du JSON en oscillateur:", err.Error())
-		return
-	}
-	clientInterface.Oscillator = append(clientInterface.Oscillator, &loadedOscillator)
-	clientInterface.CurrentOscillator = len(clientInterface.Oscillator) - 1
-	clientInterface.ReloadSelector = true
-	clientInterface.ReloadWave = true
-}
-
-// retourne le noms des fichiers enregistrés dans le dossier /res/user
-func (o *Oscillator) parseNameOfFileRegistred() []string {
-	files, err := os.ReadDir("res/user")
-	if err != nil {
-		fmt.Println("Erreur lors de la lecture du dossier /res/user :", err.Error())
-	}
-	var filesName []string
-	for _, file := range files {
-		filesName = append(filesName, file.Name())
-	}
-	return filesName
-}
-
 func (o *Oscillator) readWaveFile(filename string) ([]float32, float64) {
 	file, err := os.Open(filename)
 	if err != nil {

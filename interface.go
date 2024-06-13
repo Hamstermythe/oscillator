@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/tfriedel6/canvas"
 	"github.com/veandco/go-sdl2/sdl"
@@ -79,11 +81,11 @@ type ClientInterface struct {
 	CondensedWave     []float32
 	CloseFileName     ButtonString
 	FileName          Champ
-	ExportWave        sdl.Rect
+	OpenMix           sdl.Rect
 	Enregistrer       sdl.Rect
 	SaveAll           sdl.Rect
 	Lire              sdl.Rect
-	Stopper           sdl.Rect
+	//Stopper           sdl.Rect
 }
 
 func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
@@ -117,11 +119,11 @@ func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 			PositionDown: sdl.Rect{X: int32(wndWidth - int(longueurChamp)), Y: int32(wndHeight - 350), W: int32(longueurChamp), H: 50},
 		},
 	}
-	ci.ExportWave = sdl.Rect{X: int32(wndWidth - 300), Y: int32(wndHeight - 250), W: 100, H: 50}
+	ci.OpenMix = sdl.Rect{X: int32(wndWidth - 300), Y: int32(wndHeight - 250), W: 100, H: 50}
 	ci.Enregistrer = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 250), W: 100, H: 50}
 	ci.SaveAll = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 190), W: 100, H: 50}
 	ci.Lire = sdl.Rect{X: int32(wndWidth - 250), Y: int32(wndHeight - 100), W: 100, H: 50}
-	ci.Stopper = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 100), W: 100, H: 50}
+	//ci.Stopper = sdl.Rect{X: int32(wndWidth - 150), Y: int32(wndHeight - 100), W: 100, H: 50}
 	width := cv.MeasureText(">"+strconv.Itoa(len(ci.Oscillator))).Width + 10
 	ci.DeroulantSelector = ButtonBool{
 		Value: true,
@@ -445,4 +447,51 @@ func (ci *ClientInterface) saveAll(dirName string) {
 		o.save(path + "/" + fileName)
 	}
 	ci.SaveToWav(path+"/wave.wav", "save")
+}
+
+// charge un oscillateur depuis un fichier JSON dans le dossier res/user
+func (ci *ClientInterface) loadOsc(path string) *Oscillator {
+	arrByte, err := os.ReadFile("res/user" + path)
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture du fichier JSON:", err.Error())
+	}
+	var loadedOscillator Oscillator
+	err = json.Unmarshal(arrByte, &loadedOscillator)
+	if err != nil {
+		fmt.Println("Erreur lors de la conversion du JSON en oscillateur:", err.Error())
+		return nil
+	}
+	return &loadedOscillator
+}
+
+// retourne le noms des fichiers enregistrés dans le dossier /res/user
+func (ci *ClientInterface) parseNameOfFileRegistred() []string {
+	files, err := os.ReadDir("res/user/all")
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture du dossier /res/user/all :", err.Error())
+	}
+	var filesName []string
+	for _, file := range files {
+		filesName = append(filesName, file.Name())
+	}
+	return filesName
+}
+
+func (ci *ClientInterface) loadMix(dirName string) {
+	path := "res/user/all/" + dirName
+	files, err := os.ReadDir(path)
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture du dossier /res/user/all/"+dirName, err.Error())
+	}
+	var oscs []*Oscillator
+	for _, file := range files {
+		if strings.Contains(file.Name(), "osc_") {
+			o := ci.loadOsc("/all/" + dirName + "/" + file.Name())
+			oscs = append(oscs, o)
+		}
+	}
+	ci.Oscillator = oscs
+	ci.CurrentOscillator = 0
+	ci.ReloadSelector = true
+	ci.ReloadWave = true
 }

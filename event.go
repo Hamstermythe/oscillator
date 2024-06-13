@@ -198,6 +198,10 @@ func addEvent(wnd *sdlcanvas.Window) *sdlcanvas.Window {
 						osc.save("res/user/osc/" + clientInterface.FileName.Champ + ".json")
 						clientInterface.FileName.Champ = ""
 						clientInterface.FileName.Value = false
+					} else if clientInterface.FileName.Cible == "Open" {
+						clientInterface.loadMix(clientInterface.FileName.Champ)
+						clientInterface.FileName.Champ = ""
+						clientInterface.FileName.Value = false
 					}
 				}
 			} else if event.Keysym.Scancode == sdl.SCANCODE_ESCAPE || event.Keysym.Scancode == sdl.SCANCODE_F12 {
@@ -550,10 +554,19 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 		clientInterface.FileName.Champ = ""
 		clientInterface.FileName.Value = false
 	}
-	if x > int(clientInterface.ExportWave.X) && x < int(clientInterface.ExportWave.X+clientInterface.ExportWave.W) && y > int(clientInterface.ExportWave.Y) && y < int(clientInterface.ExportWave.Y+clientInterface.ExportWave.H) {
-		fileName := "output.wav"
-		clientInterface.SaveToWav(fileName, "export")
-		//osc.play(fileName)
+	if x > int(clientInterface.OpenMix.X) && x < int(clientInterface.OpenMix.X+clientInterface.OpenMix.W) && y > int(clientInterface.OpenMix.Y) && y < int(clientInterface.OpenMix.Y+clientInterface.OpenMix.H) {
+		if clientInterface.FileName.Value {
+			if clientInterface.FileName.Cible == "Open" && clientInterface.FileName.Champ != "" {
+				clientInterface.loadMix(clientInterface.FileName.Champ) //"osc/" + clientInterface.FileName.Champ + ".json")
+				clientInterface.FileName.Value = false
+			}
+			clientInterface.FileName.Cible = "Open"
+			clientInterface.FileName.Champ = ""
+			return
+		}
+		clientInterface.FileName.Value = true
+		clientInterface.FileName.Cible = "Open"
+		clientInterface.FileName.Champ = ""
 	}
 	if x > int(clientInterface.Enregistrer.X) && x < int(clientInterface.Enregistrer.X+clientInterface.Enregistrer.W) && y > int(clientInterface.Enregistrer.Y) && y < int(clientInterface.Enregistrer.Y+clientInterface.Enregistrer.H) {
 		if clientInterface.FileName.Value {
@@ -590,9 +603,11 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 			osc.stop(fileName)
 		*/
 	}
-	if x > int(clientInterface.Stopper.X) && x < int(clientInterface.Stopper.X+clientInterface.Stopper.W) && y > int(clientInterface.Stopper.Y) && y < int(clientInterface.Stopper.Y+clientInterface.Stopper.H) {
-		//osc.stop(fileName)
-	}
+	/*
+		if x > int(clientInterface.Stopper.X) && x < int(clientInterface.Stopper.X+clientInterface.Stopper.W) && y > int(clientInterface.Stopper.Y) && y < int(clientInterface.Stopper.Y+clientInterface.Stopper.H) {
+			//osc.stop(fileName)
+		}
+	*/
 
 	if strings.Contains(souris.Click, "Color") {
 		clientInterface.ReloadSelector = true
