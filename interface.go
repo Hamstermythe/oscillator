@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -141,6 +139,19 @@ func (ci *ClientInterface) InitInterface(cv *canvas.Canvas) {
 	ci.ReloadingWave = false
 	ci.ReloadingSelector = false
 	ci.CurrentOscillator = 0
+}
+
+func (ci *ClientInterface) reloadWave() {
+	wave, _ := osc.GenerateWave()
+	if len(ci.Wave)-1 < ci.CurrentOscillator || len(ci.Wave) == 0 {
+		ci.Wave = append(ci.Wave, wave)
+	} else {
+		ci.Wave[ci.CurrentOscillator] = wave
+	}
+	if strings.Contains(souris.Click, "Only") {
+		souris.Click = ""
+	}
+	ci.ReloadingWave = false
 }
 
 func (ci *ClientInterface) reloadSelectorOscillator(cv *canvas.Canvas) {
@@ -386,7 +397,6 @@ func (ci *ClientInterface) amalgameWave() {
 		}
 	}
 	ci.CondensedWave = amalgamedWave
-
 }
 
 func (ci *ClientInterface) SaveToWav(filename, exportOrSave string) error {
@@ -401,7 +411,7 @@ func (ci *ClientInterface) SaveToWav(filename, exportOrSave string) error {
 	// Create WAV file
 	file, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("Erreur lors de la création du fichier WAV : %w", err)
+		return fmt.Errorf("erreur lors de la création du fichier WAV : %w", err)
 	}
 	defer file.Close()
 
@@ -412,25 +422,26 @@ func (ci *ClientInterface) SaveToWav(filename, exportOrSave string) error {
 	}
 	writer.Write(arrBytes)
 
-	go func(filename string) {
-		var cmd *exec.Cmd
+	/*
+		go func(filename string) {
+			var cmd *exec.Cmd
 
-		switch runtime.GOOS {
-		case "windows":
-			cmd = exec.Command("cmd", "/C", "start", filename)
-		case "linux":
-			cmd = exec.Command("bash", "-c", fmt.Sprintf("mplayer %s", filename))
-		default:
-			fmt.Println("Unsupported OS")
-			return
-		}
+			switch runtime.GOOS {
+			case "windows":
+				cmd = exec.Command("cmd", "/C", "start", filename)
+			case "linux":
+				cmd = exec.Command("bash", "-c", fmt.Sprintf("mplayer %s", filename))
+			default:
+				fmt.Println("Unsupported OS")
+				return
+			}
 
-		err := cmd.Run()
-		if err != nil {
-			fmt.Printf("Erreur lors de la lecture du fichier WAV : %v\n", err)
-		}
-	}(filename)
-
+			err := cmd.Run()
+			if err != nil {
+				fmt.Printf("Erreur lors de la lecture du fichier WAV : %v\n", err)
+			}
+		}(filename)
+	*/
 	return nil
 }
 

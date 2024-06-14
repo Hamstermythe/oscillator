@@ -597,17 +597,15 @@ func mouseDownUpdateOscillatorValues(button, x, y int) {
 		clientInterface.FileName.Champ = ""
 	}
 	if x > int(clientInterface.Lire.X) && x < int(clientInterface.Lire.X+clientInterface.Lire.W) && y > int(clientInterface.Lire.Y) && y < int(clientInterface.Lire.Y+clientInterface.Lire.H) {
-		clientInterface.SaveToWav("res/temp/output.wav", "save")
-		/*
-			fileName := "output.wav"
-			osc.stop(fileName)
-		*/
-	}
-	/*
-		if x > int(clientInterface.Stopper.X) && x < int(clientInterface.Stopper.X+clientInterface.Stopper.W) && y > int(clientInterface.Stopper.Y) && y < int(clientInterface.Stopper.Y+clientInterface.Stopper.H) {
-			//osc.stop(fileName)
+		clientInterface.amalgameWave()
+		var preparedArr []float32
+		for _, v := range clientInterface.CondensedWave {
+			b := byte(v * 32767 * 8)
+			r := restoreFloat32(b)
+			preparedArr = append(preparedArr, r)
 		}
-	*/
+		chanSon <- &Son{arr: preparedArr, duration: float64(len(preparedArr)) / float64(clientInterface.SampleRate*2)}
+	}
 
 	if strings.Contains(souris.Click, "Color") {
 		clientInterface.ReloadSelector = true

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-
-	"github.com/youpy/go-wav"
 )
 
 type Oscillator struct {
@@ -199,25 +197,4 @@ func (o *Oscillator) save(path string) {
 	if err != nil {
 		fmt.Println("Erreur lors de l'écriture du fichier JSON:", err.Error())
 	}
-}
-
-func (o *Oscillator) readWaveFile(filename string) ([]float32, float64) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, 0 //, fmt.Errorf("Erreur lors de l'ouverture du fichier WAV : %w", err)
-	}
-	defer file.Close()
-
-	reader := wav.NewReader(file)
-	samples, err := reader.ReadSamples()
-	if err != nil {
-		return nil, 0 //, fmt.Errorf("Erreur lors de la lecture des échantillons du fichier WAV : %w", err)
-	}
-	var fileData []float32
-	for _, sample := range samples {
-		fileData = append(fileData, float32(sample.Values[0])/(32767*8))
-	}
-	soundDuration := float64(len(samples)) / float64(clientInterface.SampleRate)
-
-	return fileData, soundDuration //len(samples)
 }
